@@ -1,5 +1,4 @@
 from app import get_db
-from dotenv import load_dotenv
 
 from typing import List, Any, Annotated
 
