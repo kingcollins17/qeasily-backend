@@ -1,10 +1,11 @@
+import abc
 from typing import Any, List, Tuple, Dict
 import aiomysql
 from app.models import *
 from app.utils.util_functions import parse_question_list
 
 
-class Database:
+class Database(abc.ABC):
     """All relevant Database operations for this application"""
 
     @staticmethod
@@ -238,12 +239,15 @@ class Database:
         connection: aiomysql.Connection,
         term: str | None = None,
         topic_id: int | None = None,
+        id: int | None = None
     ) -> List[Quiz]:
         query = "SELECT * FROM quiz"
         if topic_id:
             query = f"SELECT * FROM quiz WHERE topic_id = {topic_id} ORDER BY id DESC"
         elif term:
             query = f"SELECT * FROM quiz WHERE title LIKE '%{term}%' ORDER BY title ASC"
+        elif id:
+            query = f"SELECT * FROM quiz WHERE id = {id}"
 
         async with connection.cursor(aiomysql.DictCursor) as cursor:
             cursor: aiomysql.Cursor = cursor

@@ -36,6 +36,15 @@ async def index(db: Annotated[aiomysql.Connection, Depends(get_db)]) -> List[Cat
     ]
     return categories
 
+@app.get("/topics")
+async def get_topics(db: Annotated[aiomysql.Connection, Depends(get_db)], cat: int):
+    return await Database.fetch_topics(connection=db, category_id=cat, limit=1000)
+    
+
+@app.get("/categories")
+async def get_categories(db: Annotated[aiomysql.Connection, Depends(get_db)]):
+    return await Database.fetch_categories(connection=db, limit = 1000)
+
 
 @app.get("/search")
 async def search(
@@ -53,23 +62,34 @@ async def search(
 @app.get("/quiz")
 async def get_quiz(
     db: Annotated[aiomysql.Connection, Depends(get_db)],
-    # Whether quiz should be accompanied with actual question data
-    data: int = 0,
     # a search term
     q: str | None = None,
     topic: int | None = None,
+    id: int | None = None,
 ):
     quiz: List[Quiz] = []
     if q:
         quiz = await Database.fetch_quiz(connection=db, term=q)
     elif topic:
         quiz = await Database.fetch_quiz(connection=db, topic_id=topic)
+    elif id:
+        quiz = await Database.fetch_quiz(connection=db, id=id)
     else:
         quiz = await Database.fetch_quiz(connection=db)
-    if data == 1:
-        return await add_quiz_data(db=db, quiz=quiz)
     # Else, return quiz without quiz data
     return quiz
+
+
+@app.get("/questions")
+async def get_questions(db: Annotated[aiomysql.Connection, Depends(get_db)], quiz: int):
+    db_quiz = await Database.fetch_quiz(connection=db, id=quiz)
+    if db_quiz:
+        questions: List[Question] = await Database.fetch_questions(
+            connection=db, ids=db_quiz[0].questions
+        )
+
+        return questions
+    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Quiz object not found")
 
 
 @app.get("/quiz/quickstart")
@@ -84,5 +104,3 @@ async def quick_start(
     )
 
     return [question for question in questions if question.id in selected]
-
-    pass
