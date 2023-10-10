@@ -105,12 +105,12 @@ class Database(abc.ABC):
     async def update_question(
         *, connection: aiomysql.Connection, question_list: List[Question]
     ):
-        query = "UPDATE questions SET question= %s, A = %s, B = %s, C = %s, D = %s WHERE id = %s"
+        query = "UPDATE questions SET question= %s, A = %s, B = %s, C = %s, D = %s, explanation = %s  WHERE id = %s"
         async with connection.cursor() as cur:
             cursor: aiomysql.Cursor = cur
             await cursor.executemany(
                 query=query,
-                args=[(q.question, q.A, q.B, q.C, q.D, q.id) for q in question_list],
+                args=[(q.question, q.A, q.B, q.C, q.D, q.explanation, q.id) for q in question_list],
             )
         await connection.commit()
 
@@ -118,8 +118,8 @@ class Database(abc.ABC):
     async def add_question(
         *, connection: aiomysql.Connection, question: Question | List[Tuple]
     ):
-        query = """INSERT INTO questions (question, A, B, C, D, correct, topic_id, user_id)
-                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"""
+        query = """INSERT INTO questions (question, A, B, C, D, correct, topic_id, user_id, explanation)
+                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)"""
         async with connection.cursor() as cursor:
             cursor: aiomysql.Cursor = cursor
             if isinstance(question, list):
@@ -136,6 +136,7 @@ class Database(abc.ABC):
                         question.correct,
                         question.topic_id,
                         question.user_id,
+                        question.explanation
                     ),
                 )
             await connection.commit()
@@ -215,12 +216,12 @@ class Database(abc.ABC):
 
     @staticmethod
     async def add_quiz(*, connection: aiomysql.Connection, quiz: List[Quiz]):
-        query = "INSERT INTO quiz (title, questions, user_id, topic_id) VALUES (%s,%s,%s,%s)"
+        query = "INSERT INTO quiz (title, questions, user_id, topic_id, duration) VALUES (%s,%s,%s,%s,%s)"
         async with connection.cursor() as cur:
             cursor: aiomysql.Cursor = cur
             await cursor.executemany(
                 query=query,
-                args=[(q.title, str(q.questions), q.user_id, q.topic_id) for q in quiz],
+                args=[(q.title, str(q.questions), q.user_id, q.topic_id, q.duration) for q in quiz],
             )
         await connection.commit()
 
@@ -249,8 +250,8 @@ class Database(abc.ABC):
         elif id:
             query = f"SELECT * FROM quiz WHERE id = {id}"
 
-        async with connection.cursor(aiomysql.DictCursor) as cursor:
-            cursor: aiomysql.Cursor = cursor
+        async with connection.cursor(aiomysql.DictCursor) as cur:
+            cursor: aiomysql.Cursor = cur
             await cursor.execute(query=query)
             res = await cursor.fetchall()
             return [
@@ -260,6 +261,7 @@ class Database(abc.ABC):
                     questions=parse_question_list(questions=quiz["questions"]),
                     user_id=quiz["user_id"],
                     topic_id=quiz["topic_id"],
+                    duration=quiz["duration"]
                 )
                 for quiz in res
             ]

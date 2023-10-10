@@ -10,7 +10,7 @@ from app.models import *
 from app.utils.util_functions import parse_csv
 from app.utils.util_paths import get_current_user
 
-route = APIRouter()
+route = APIRouter(dependencies=[Depends(get_current_user)])
 
 
 @route.get("/categories")
@@ -45,7 +45,7 @@ async def add_quiz(
 @route.delete("/quiz/remove")
 async def remove_quiz(
     id: IdList,
-    db: Annotated[aiomysql.Connection, Depends(get_db)]
+    db: Annotated[aiomysql.Connection, Depends(get_db)],
     # user: Annotated[User, Depends(get_current_user)],
 ):
     await Database.remove_quiz(connection=db, id=id.id)

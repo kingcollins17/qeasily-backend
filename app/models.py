@@ -48,6 +48,7 @@ class Question(BaseModel):
     correct: str
     topic_id: int | None = Field(default=None)
     user_id: int | None = Field(default=None)
+    explanation: str | None = Field(default=None)
 
 
     def to_tuple(self, topic_id: int, user_id: int):
@@ -60,6 +61,7 @@ class Question(BaseModel):
             self.correct,
             topic_id,
             user_id,
+            self.explanation
         )
 
 
@@ -72,6 +74,7 @@ class Quiz(BaseModel):
     quiz_data: List[Question] | None = Field(
         default=None, description="The actual list of questions for this quiz"
     )
+    duration: int 
 
 
 class IdList(BaseModel):

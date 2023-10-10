@@ -35,6 +35,7 @@ CREATE TABLE
           `B` VARCHAR(100) NOT NULL,
           `C` VARCHAR(100) NOT NULL,
           `D` VARCHAR(100) NOT NULL,
+          `explanation` VARCHAR(2048) NOT NULL DEFAULT ' ',
           `correct` ENUM ('A', 'B', 'C', 'D') NOT NULL DEFAULT 'A',
           `topic_id` INT UNSIGNED NOT NULL,
           `user_id` INT UNSIGNED NOT NULL,
@@ -49,6 +50,7 @@ CREATE TABLE
           `questions` VARCHAR(2048) NOT NULL,
           `user_id` INT UNSIGNED NOT NULL,
           `topic_id` INT UNSIGNED NOT NULL,
+          `duration` INT UNSIGNED NOT NULL DEFAULT '1800',
           FOREIGN KEY (`topic_id`) REFERENCES `Quiz`.`Topics`(`id`) ON DELETE CASCADE ON UPDATE CASCADE,
           PRIMARY KEY `quiz_id` (`id`),
           CONSTRAINT `fk_quiz_users`

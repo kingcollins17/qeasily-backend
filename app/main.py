@@ -37,7 +37,7 @@ async def index(db: Annotated[aiomysql.Connection, Depends(get_db)]) -> List[Cat
 
 @app.get("/topics")
 async def get_topics(db: Annotated[aiomysql.Connection, Depends(get_db)], cat: int):
-    return await Database.fetch_topics(connection=db, category_id=cat, limit=1000)
+    return await  Database.fetch_topics(connection=db, category_id=cat, limit=1000)
     
 
 @app.get("/categories")
