@@ -3,6 +3,8 @@ from typing import List, Tuple, Set
 import pandas as pd
 import random
 
+from app.models import Category, Topic
+
 
 #
 def select_random(count: int, integers: List[int]) -> List[int]:
@@ -16,12 +18,45 @@ def select_random(count: int, integers: List[int]) -> List[int]:
     return list(res)
 
 
+# def copy_with_count()
+def copy_with_count(*,
+    count: int, category: Category | None = None, topic: Topic | None = None
+):
+    if category:
+        if category.topic_count:
+            return category
+        # else return new copy category with topic_count
+        return Category(id=category.id, name=category.name, topic_count=count)
+    elif topic:
+        if topic.quiz_count:
+            return topic
+        return Topic(
+            id=topic.id,
+            title=topic.title,
+            description=topic.description,
+            category_id=topic.category_id,
+            quiz_count=count,
+        )
+    else:
+        raise Exception('Either category or topic must be given')
+
+
 def parse_csv(contents: str, topic_id: int, user_id: int) -> List[Tuple]:
     """Reads and converts a string in memory into a
     list of tuples of questions that can be inserted into the database"""
     values = []
     data = pd.read_csv(StringIO(contents))
-    headers = ["question", "a", "b", "c", "d", "correct", "topic_id", "user_id"]
+    headers = [
+        "question",
+        "a",
+        "b",
+        "c",
+        "d",
+        "correct",
+        "explanation",
+        "topic_id",
+        "user_id",
+    ]
     for col in data.columns:
         if not col.casefold() in headers:
             # Drop any column that is not in list of allowed headers

@@ -5,9 +5,13 @@ from typing import Any, List
 class Error(BaseModel):
     msg: str
 
+
 class QuickStartConf(BaseModel):
     topics: List[int]
-    total_questions: int = Field(default=30, description="Total number of questions for the quiz")
+    total_questions: int = Field(
+        default=30, description="Total number of questions for the quiz"
+    )
+
 
 class User(BaseModel):
     id: int | None = Field(default=None, description="ID of user")
@@ -26,6 +30,7 @@ class Topic(BaseModel):
     title: str
     description: str
     category_id: int
+    quiz_count: int | None = Field(default=None, description='Number of quizzes this topic has')
 
 
 class Category(BaseModel):
@@ -34,6 +39,19 @@ class Category(BaseModel):
     topics: List[Topic] | None = Field(
         default=None, description="List of topics under this category"
     )
+    topic_count: int | None = Field(
+        default=None, description="The number of topics in this category"
+    )
+
+    def add_topic_count(self):
+        if self.topics:
+            self.topic_count = len(self.topics)
+        else:
+            self.topic_count = 0
+        return self
+
+    
+
 
 
 class Question(BaseModel):
@@ -46,10 +64,9 @@ class Question(BaseModel):
     C: str
     D: str
     correct: str
+    explanation: str
     topic_id: int | None = Field(default=None)
     user_id: int | None = Field(default=None)
-    explanation: str | None = Field(default=None)
-
 
     def to_tuple(self, topic_id: int, user_id: int):
         return (
@@ -59,9 +76,9 @@ class Question(BaseModel):
             self.C,
             self.D,
             self.correct,
+            self.explanation,
             topic_id,
             user_id,
-            self.explanation
         )
 
 
@@ -69,12 +86,12 @@ class Quiz(BaseModel):
     id: int | None = Field(default=None)
     title: str
     questions: List[int]
-    topic_id: int 
-    user_id: int 
+    topic_id: int
+    user_id: int
     quiz_data: List[Question] | None = Field(
         default=None, description="The actual list of questions for this quiz"
     )
-    duration: int 
+    duration: int
 
 
 class IdList(BaseModel):

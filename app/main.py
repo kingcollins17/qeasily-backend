@@ -19,6 +19,12 @@ app.include_router(auth_route, prefix="/auth")
 app.include_router(admin_route, prefix="/admin")
 
 
+@app.get("/count")
+async def get_count_data(db: Annotated[aiomysql.Connection, Depends(get_db)], id: int):
+    data = await Database.fetch_count(connection=db, topic_id=id)
+    return {"count": data}
+
+
 @app.get("/")
 async def index(db: Annotated[aiomysql.Connection, Depends(get_db)]) -> List[Category]:
     data = await Database.fetch_categories(connection=db)
@@ -29,20 +35,35 @@ async def index(db: Annotated[aiomysql.Connection, Depends(get_db)]) -> List[Cat
             topics=await Database.fetch_topics(
                 connection=db, category_id=cat.id, limit=10
             ),
-        )
+        ).add_topic_count()
         for cat in data
         if cat.id
     ]
     return categories
 
+
 @app.get("/topics")
 async def get_topics(db: Annotated[aiomysql.Connection, Depends(get_db)], cat: int):
-    return await  Database.fetch_topics(connection=db, category_id=cat, limit=1000)
-    
+    topics = await Database.fetch_topics(connection=db, category_id=cat, limit=1000)
+    return [
+        copy_with_count(
+            count=await Database.fetch_count(connection=db, topic_id=topic.id),
+            topic=topic,
+        )
+        for topic in topics
+    ]
+
 
 @app.get("/categories")
 async def get_categories(db: Annotated[aiomysql.Connection, Depends(get_db)]):
-    return await Database.fetch_categories(connection=db, limit = 1000)
+    categories = await Database.fetch_categories(connection=db, limit=1000)
+    return [
+        copy_with_count(
+            count=await Database.fetch_count(connection=db, category_id=category.id),
+            category=category,
+        )
+        for category in categories
+    ]
 
 
 @app.get("/search")
@@ -88,7 +109,9 @@ async def get_questions(db: Annotated[aiomysql.Connection, Depends(get_db)], qui
         )
 
         return questions
-    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Quiz object not found")
+    raise HTTPException(
+        status_code=status.HTTP_404_NOT_FOUND, detail="Quiz object not found"
+    )
 
 
 @app.get("/quiz/quickstart")

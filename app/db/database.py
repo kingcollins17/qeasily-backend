@@ -110,7 +110,10 @@ class Database(abc.ABC):
             cursor: aiomysql.Cursor = cur
             await cursor.executemany(
                 query=query,
-                args=[(q.question, q.A, q.B, q.C, q.D, q.explanation, q.id) for q in question_list],
+                args=[
+                    (q.question, q.A, q.B, q.C, q.D, q.explanation, q.id)
+                    for q in question_list
+                ],
             )
         await connection.commit()
 
@@ -118,7 +121,7 @@ class Database(abc.ABC):
     async def add_question(
         *, connection: aiomysql.Connection, question: Question | List[Tuple]
     ):
-        query = """INSERT INTO questions (question, A, B, C, D, correct, topic_id, user_id, explanation)
+        query = """INSERT INTO questions (question, A, B, C, D, correct, explanation, topic_id, user_id)
                  VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)"""
         async with connection.cursor() as cursor:
             cursor: aiomysql.Cursor = cursor
@@ -127,17 +130,7 @@ class Database(abc.ABC):
             else:
                 await cursor.execute(
                     query=query,
-                    args=(
-                        question.question,
-                        question.A,
-                        question.B,
-                        question.C,
-                        question.D,
-                        question.correct,
-                        question.topic_id,
-                        question.user_id,
-                        question.explanation
-                    ),
+                    args=question.to_tuple(topic_id=question.topic_id, user_id=question.user_id),  # type: ignore
                 )
             await connection.commit()
 
@@ -202,7 +195,7 @@ class Database(abc.ABC):
             raise Exception("Topic or list of ids must be provided")
 
         async with connection.cursor(aiomysql.DictCursor) as cur:
-            cursor: aiomysql.Cursor = cur
+            cursor: aiomysql.DictCursor = cur
             if ids:
                 query = f"SELECT * FROM questions WHERE id IN {tuple(ids)}"
             elif topics:
@@ -221,7 +214,10 @@ class Database(abc.ABC):
             cursor: aiomysql.Cursor = cur
             await cursor.executemany(
                 query=query,
-                args=[(q.title, str(q.questions), q.user_id, q.topic_id, q.duration) for q in quiz],
+                args=[
+                    (q.title, str(q.questions), q.user_id, q.topic_id, q.duration)
+                    for q in quiz
+                ],
             )
         await connection.commit()
 
@@ -235,12 +231,36 @@ class Database(abc.ABC):
         await connection.commit()
 
     @staticmethod
+    async def fetch_count(
+        *,
+        connection: aiomysql.Connection,
+        category_id: int | None = None,
+        topic_id: int | None =None ,
+    ):
+        """Fetches the number of topics for a category if category_id is given, or number
+        of quizzes for a particular topic if topic_is given. It can either be category_id or
+        topic_id"""
+        query = "SELECT COUNT(*) FROM topics"
+        async with connection.cursor() as cur:
+            cursor: aiomysql.Cursor = cur
+            if category_id:
+                query = "SELECT COUNT(*) FROM topics WHERE category_id = %s"
+                await cursor.execute(query=query, args=(category_id,))
+            elif topic_id:
+                query = "SELECT COUNT(*) FROM quiz WHERE topic_id = %s"
+                await cursor.execute(query=query, args=(topic_id,))
+            else:
+                raise Exception('Either category_id or topic_id must be given')
+            res = await cursor.fetchone()
+            return res[0]         
+
+    @staticmethod
     async def fetch_quiz(
         *,
         connection: aiomysql.Connection,
         term: str | None = None,
         topic_id: int | None = None,
-        id: int | None = None
+        id: int | None = None,
     ) -> List[Quiz]:
         query = "SELECT * FROM quiz"
         if topic_id:
@@ -261,7 +281,7 @@ class Database(abc.ABC):
                     questions=parse_question_list(questions=quiz["questions"]),
                     user_id=quiz["user_id"],
                     topic_id=quiz["topic_id"],
-                    duration=quiz["duration"]
+                    duration=quiz["duration"],
                 )
                 for quiz in res
             ]
