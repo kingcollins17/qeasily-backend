@@ -32,6 +32,7 @@ class Topic(BaseModel):
     category_id: int
     quiz_count: int | None = Field(default=None, description='Number of quizzes this topic has')
 
+    
 
 class Category(BaseModel):
     id: int | None = Field(default=None)
@@ -87,11 +88,17 @@ class Quiz(BaseModel):
     title: str
     questions: List[int]
     topic_id: int
-    user_id: int
+    user_id: int | None = Field(default=None, description='The user_id of the user that created this quiz')
     quiz_data: List[Question] | None = Field(
         default=None, description="The actual list of questions for this quiz"
     )
     duration: int
+
+    def add_user_id(self, id: int | None):
+        """Append the user id and return this object"""
+        self.user_id = id
+        return self
+
 
 
 class IdList(BaseModel):

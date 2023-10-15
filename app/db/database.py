@@ -127,12 +127,22 @@ class Database(abc.ABC):
             cursor: aiomysql.Cursor = cursor
             if isinstance(question, list):
                 await cursor.executemany(query=query, args=question)
+                await connection.commit()
+            #return the list of ids of the questions that were inserted 
+                await cursor.execute(
+                    query=f"SELECT id FROM questions ORDER BY id DESC LIMIT {len(question)}"
+                )
+                res = await cursor.fetchall()
+                return [id[0] for id in res]
             else:
                 await cursor.execute(
                     query=query,
                     args=question.to_tuple(topic_id=question.topic_id, user_id=question.user_id),  # type: ignore
                 )
-            await connection.commit()
+                await connection.commit()
+                return [cursor.lastrowid]
+                
+            
 
     @staticmethod
     async def remove_question(
@@ -147,16 +157,16 @@ class Database(abc.ABC):
                 )
             else:
                 await cursor.execute(query=query, args=(question_id))
-            await connection.commit()
+            await  connection.commit()
 
     @staticmethod
     async def fetch_user(
-        *, connection: aiomysql.Connection, id: int | str
+        *, connection: aiomysql.Connection, identifier: int | str
     ) -> User | None:
         async with connection.cursor(aiomysql.DictCursor) as cursor:
             query = "SELECT * FROM users WHERE (id = %s OR email = %s)"
             cursor: aiomysql.DictCursor = cursor
-            await cursor.execute(query, args=(id, id))
+            await cursor.execute(query, args=(identifier, identifier))
         user = await cursor.fetchone()
         if user:
             return User(**user)
@@ -208,6 +218,28 @@ class Database(abc.ABC):
             return [Question(**value) for value in res]
 
     @staticmethod
+    async def search_questions(
+        connection: aiomysql.Connection, terms: List[str], topic_id: int | None = None
+    ):
+        query = "SELECT * FROM questions WHERE "
+        count = 0
+        max = len(terms)
+        for value in terms:
+            if count >= max - 1:
+                query += f"question LIKE '{value}' "
+            else:
+                query += f"question LIKE '{value}' OR "
+            count += 1
+            if topic_id:
+                query += f"AND topic_id = {topic_id}"
+        #
+        async with connection.cursor(aiomysql.DictCursor) as cur:
+            cursor: aiomysql.Cursor = cur
+            await cursor.execute(query=query)
+            res = await cursor.fetchall()
+            return [Question(**value) for value in res]
+
+    @staticmethod
     async def add_quiz(*, connection: aiomysql.Connection, quiz: List[Quiz]):
         query = "INSERT INTO quiz (title, questions, user_id, topic_id, duration) VALUES (%s,%s,%s,%s,%s)"
         async with connection.cursor() as cur:
@@ -235,7 +267,7 @@ class Database(abc.ABC):
         *,
         connection: aiomysql.Connection,
         category_id: int | None = None,
-        topic_id: int | None =None ,
+        topic_id: int | None = None,
     ):
         """Fetches the number of topics for a category if category_id is given, or number
         of quizzes for a particular topic if topic_is given. It can either be category_id or
@@ -250,9 +282,9 @@ class Database(abc.ABC):
                 query = "SELECT COUNT(*) FROM quiz WHERE topic_id = %s"
                 await cursor.execute(query=query, args=(topic_id,))
             else:
-                raise Exception('Either category_id or topic_id must be given')
+                raise Exception("Either category_id or topic_id must be given")
             res = await cursor.fetchone()
-            return res[0]         
+            return res[0]
 
     @staticmethod
     async def fetch_quiz(

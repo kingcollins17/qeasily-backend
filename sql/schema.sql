@@ -1,8 +1,8 @@
--- DROP DATABASE IF EXISTS `QUIZ`;
--- CREATE DATABASE `QUIZ` DEFAULT CHARACTER
--- SET
---      utf8 COLLATE utf8_unicode_ci;
--- USE QUIZ;
+DROP DATABASE IF EXISTS `QUIZ`;
+CREATE DATABASE `QUIZ` DEFAULT CHARACTER
+SET
+     utf8 COLLATE utf8_unicode_ci;
+USE QUIZ;
 CREATE TABLE
      IF NOT EXISTS `Users` (
           `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -15,13 +15,13 @@ CREATE TABLE
 CREATE TABLE
      IF NOT EXISTS `Categories` (
           `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
-          `name` VARCHAR(255)NOT NULL UNIQUE,
+          `name` VARCHAR(255) NOT NULL UNIQUE,
           PRIMARY KEY (`id`)
      ) ENGINE = InnoDB;
 CREATE TABLE
      IF NOT EXISTS `Topics` (
           `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
-          `title` VARCHAR(100) NOT NULL,
+          `title` VARCHAR(100) NOT NULL UNIQUE,
           `description` VARCHAR (1024) NOT NULL DEFAULT "",
           `category_id` INT UNSIGNED NOT NULL,
           PRIMARY KEY (`id`),
@@ -30,7 +30,7 @@ CREATE TABLE
 CREATE TABLE
      IF NOT EXISTS `Questions` (
           `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
-          `question` VARCHAR(255),
+          `question` VARCHAR(512) NOT NULL UNIQUE,
           `A` VARCHAR(100) NOT NULL,
           `B` VARCHAR(100) NOT NULL,
           `C` VARCHAR(100) NOT NULL,

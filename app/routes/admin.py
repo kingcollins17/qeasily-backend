@@ -36,10 +36,19 @@ async def get_question(topic: int, db: Annotated[aiomysql.Connection, Depends(ge
 async def add_quiz(
     quiz: List[Quiz],
     db: Annotated[aiomysql.Connection, Depends(get_db)],
-    # user: Annotated[User, Depends(get_current_user)],
+    user: Annotated[User, Depends(get_current_user)],
 ):
-    await Database.add_quiz(connection=db, quiz=quiz)
-    return {"detail": "Quiz objects added successfully"}
+    try:
+        await Database.add_quiz(
+            connection=db, quiz=[q.add_user_id(user.id) for q in quiz]
+        )
+        return {"detail": "Quiz objects added successfully"}
+
+    except IntegrityError:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Quiz data provided is invalid",
+        )
 
 
 @route.delete("/quiz/remove")
@@ -71,7 +80,11 @@ async def remove_category(
 
 
 @route.post("/topic")
-async def add_topic(topic: Topic, db: Annotated[aiomysql.Connection, Depends(get_db)]):
+async def add_topic(
+    topic: Topic,
+    db: Annotated[aiomysql.Connection, Depends(get_db)],
+    user: Annotated[User | None, Depends(get_current_user)],
+):
     await Database.add_topic(connection=db, topic=topic)
     return {"detail": f"Added Topic '{topic.title}'"}
 
@@ -117,15 +130,17 @@ async def add_question(
     db: Annotated[aiomysql.Connection, Depends(get_db)],
     user: Annotated[User, Depends(get_current_user)],
 ):
+    #questions is a list of int which are question ids in the database
     questions = [(q.to_tuple(topic, user.id)) for q in data]  # type: ignore
     try:
-        await Database.add_question(connection=db, question=questions)
-    except IntegrityError as err:
+        questions = await Database.add_question(connection=db, question=questions)
+        return {"detail": "Questions added successfully", "questions": questions}
+    except IntegrityError:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Data violates db constraints",
+            detail="Question data is invalid!",
         )
-    return {"detail": "Questions added successfully"}
+    
 
 
 @route.put("/question/update")
@@ -148,12 +163,16 @@ async def handle_csv_(
     contents = await file.read()
 
     questions = parse_csv(contents=contents.decode(), topic_id=topic, user_id=user.id)  # type: ignore
-    
+
     try:
-        await Database.add_question(question=questions, connection=db)
+        questions = await Database.add_question(question=questions, connection=db)
+        return {"detail": "CSV Upload processed", "questions": questions}
     except IntegrityError as e:
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Ensure that associated topic exists")
-    return {"detail": "CSV Upload processed"}
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Error processing and adding csv questions to db",
+        )
+    
 
 
 @route.delete("/question/remove")
