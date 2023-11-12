@@ -1,8 +1,8 @@
-DROP DATABASE IF EXISTS `QUIZ`;
-CREATE DATABASE `QUIZ` DEFAULT CHARACTER
+DROP DATABASE IF EXISTS `Quiz`;
+CREATE DATABASE `Quiz` DEFAULT CHARACTER
 SET
      utf8 COLLATE utf8_unicode_ci;
-USE QUIZ;
+USE Quiz;
 CREATE TABLE
      IF NOT EXISTS `Users` (
           `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -52,8 +52,8 @@ CREATE TABLE
           `topic_id` INT UNSIGNED NOT NULL,
           `duration` INT UNSIGNED NOT NULL DEFAULT '1800',
           FOREIGN KEY (`topic_id`) REFERENCES `Quiz`.`Topics`(`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-          PRIMARY KEY `quiz_id` (`id`),
-          CONSTRAINT `fk_quiz_users`
+          PRIMARY KEY `Quiz_id` (`id`),
+          CONSTRAINT `fk_Quiz_users`
             FOREIGN KEY (`user_id`)
             REFERENCES `Quiz`.`users` (`id`)
             ON DELETE NO ACTION
