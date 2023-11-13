@@ -32,7 +32,7 @@ async def register_user(
 
 
 @route.post("/login")
-async def login_user(user: Annotated[User | None, Depends(authenticate)]):
+async def login_user(user: Annotated[ Union[User, None], Depends(authenticate)]):
     if user:
             return {'token': create_access_token(data=user.model_dump())}
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=Error(msg='User not found').msg)
