@@ -16,9 +16,9 @@ async def add_quiz_data(*, quiz: List[Quiz], db: aiomysql.Connection):
 
 async def search_item(
     db: Annotated[aiomysql.Connection, Depends(get_db)],
-    cat: str | None = None,
-    topic: str | None = None,
-    quiz: str | None = None,
+    cat: Union[str, None] = None,
+    topic: Union[str, None] = None,
+    quiz: Union[str, None] = None,
 ):
     if cat:
         data = await Database.search_category(connection=db, term=cat)

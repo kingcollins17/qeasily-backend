@@ -68,7 +68,7 @@ async def get_categories(db: Annotated[aiomysql.Connection, Depends(get_db)]):
 
 @app.get("/search")
 async def search(
-    item: Annotated[List[Category] | List[Topic] | None, Depends(search_item)]
+    item: Annotated[Union[List[Category] , List[Topic] , None], Depends(search_item)]
 ):
     if item:
         return item
@@ -83,9 +83,9 @@ async def search(
 async def get_quiz(
     db: Annotated[aiomysql.Connection, Depends(get_db)],
     # a search term
-    q: str | None = None,
-    topic: int | None = None,
-    id: int | None = None,
+    q: Union[str , None] = None,
+    topic: Union[int , None] = None,
+    id: Union[int , None ]= None,
 ):
     quiz: List[Quiz] = []
     if q:
