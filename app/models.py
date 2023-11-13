@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import Any, List
+from typing import Any, List, Union
 
 
 class Error(BaseModel):
@@ -14,33 +14,33 @@ class QuickStartConf(BaseModel):
 
 
 class User(BaseModel):
-    id: int | None = Field(default=None, description="ID of user")
-    user_name: str | None = Field(
+    id: Union[int, None] = Field(default=None, description="ID of user")
+    user_name: Union[str, None] = Field(
         default=None, description="Username is not required during login"
     )
     email: str
     password: str
-    admin: bool | None = Field(
+    admin: Union[bool, None] = Field(
         default=False, description="Whether this user is an admin"
     )
 
 
 class Topic(BaseModel):
-    id: int | None = Field(default=None)
+    id: Union[int, None] = Field(default=None)
     title: str
     description: str
     category_id: int
-    quiz_count: int | None = Field(default=None, description='Number of quizzes this topic has')
+    quiz_count: Union[int, None] = Field(default=None, description='Number of quizzes this topic has')
 
     
 
 class Category(BaseModel):
-    id: int | None = Field(default=None)
+    id: Union[int, None] = Field(default=None)
     name: str
-    topics: List[Topic] | None = Field(
+    topics: Union[List[Topic], None] = Field(
         default=None, description="List of topics under this category"
     )
-    topic_count: int | None = Field(
+    topic_count: Union[int, None] = Field(
         default=None, description="The number of topics in this category"
     )
 
@@ -56,7 +56,7 @@ class Category(BaseModel):
 
 
 class Question(BaseModel):
-    id: int | None = Field(
+    id: Union[int, None] = Field(
         default=None, description="Integer ID is not required for insertion"
     )
     question: str
@@ -66,8 +66,8 @@ class Question(BaseModel):
     D: str
     correct: str
     explanation: str
-    topic_id: int | None = Field(default=None)
-    user_id: int | None = Field(default=None)
+    topic_id: Union[int, None] = Field(default=None)
+    user_id: Union[int, None] = Field(default=None)
 
     def to_tuple(self, topic_id: int, user_id: int):
         return (
@@ -84,17 +84,17 @@ class Question(BaseModel):
 
 
 class Quiz(BaseModel):
-    id: int | None = Field(default=None)
+    id: Union[int, None] = Field(default=None)
     title: str
     questions: List[int]
     topic_id: int
-    user_id: int | None = Field(default=None, description='The user_id of the user that created this quiz')
-    quiz_data: List[Question] | None = Field(
+    user_id: Union[int, None] = Field(default=None, description='The user_id of the user that created this quiz')
+    quiz_data: Union[List[Question], None] = Field(
         default=None, description="The actual list of questions for this quiz"
     )
     duration: int
 
-    def add_user_id(self, id: int | None):
+    def add_user_id(self, id: Union[int, None]):
         """Append the user id and return this object"""
         self.user_id = id
         return self

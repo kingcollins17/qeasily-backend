@@ -35,7 +35,7 @@ class Database(abc.ABC):
     @staticmethod
     async def search_category(
         *, connection: aiomysql.Connection, term: str
-    ) -> List[Category] | None:
+    ) -> Union[List[Category], None]:
         async with connection.cursor(aiomysql.DictCursor) as cursor:
             cursor: aiomysql.Cursor = cursor
             query = f"SELECT * FROM categories WHERE name LIKE '%{term}%'"
@@ -55,7 +55,7 @@ class Database(abc.ABC):
     @staticmethod
     async def search_topic(
         *, connection: aiomysql.Connection, search_term: str
-    ) -> List[Topic] | None:
+    ) -> Union[List[Topic], None]:
         query = f"SELECT * FROM topics WHERE title LIKE '%{search_term}%'"
         async with connection.cursor(aiomysql.DictCursor) as cursor:
             await cursor.execute(query)
@@ -88,7 +88,7 @@ class Database(abc.ABC):
 
     @staticmethod
     async def remove_topic(
-        *, connection: aiomysql.Connection, topic_id: int | List[int]
+        *, connection: aiomysql.Connection, topic_id:Union[int, List[int]]
     ):
         async with connection.cursor() as cursor:
             cursor: aiomysql.Cursor = cursor
@@ -119,7 +119,7 @@ class Database(abc.ABC):
 
     @staticmethod
     async def add_question(
-        *, connection: aiomysql.Connection, question: Question | List[Tuple]
+        *, connection: aiomysql.Connection, question: Union[Question, List[Tuple]]
     ):
         query = """INSERT INTO questions (question, A, B, C, D, correct, explanation, topic_id, user_id)
                  VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)"""
@@ -146,7 +146,7 @@ class Database(abc.ABC):
 
     @staticmethod
     async def remove_question(
-        *, connection: aiomysql.Connection, question_id: int | List[int]
+        *, connection: aiomysql.Connection, question_id:Union[ int, List[int]]
     ):
         query = "DELETE FROM questions WHERE id = %s"
         async with connection.cursor() as cursor:
@@ -161,8 +161,8 @@ class Database(abc.ABC):
 
     @staticmethod
     async def fetch_user(
-        *, connection: aiomysql.Connection, identifier: int | str
-    ) -> User | None:
+        *, connection: aiomysql.Connection, identifier:Union[ int, str
+]    ) -> Union[User, None]:
         async with connection.cursor(aiomysql.DictCursor) as cursor:
             query = "SELECT * FROM users WHERE (id = %s OR email = %s)"
             cursor: aiomysql.DictCursor = cursor
@@ -195,8 +195,8 @@ class Database(abc.ABC):
     async def fetch_questions(
         *,
         connection: aiomysql.Connection,
-        ids: List[int] | None = None,
-        topics: List[int] | None = None,
+        ids: Union[List[int], None] = None,
+        topics: Union[List[int], None] = None,
         limit: int = 100,
     ):
         query = f"SELECT * FROM questions ORDER BY id DESC LIMIT {limit}"
@@ -219,7 +219,7 @@ class Database(abc.ABC):
 
     @staticmethod
     async def search_questions(
-        connection: aiomysql.Connection, terms: List[str], topic_id: int | None = None
+        connection: aiomysql.Connection, terms: List[str], topic_id:Union[ int, None] = None
     ):
         query = "SELECT * FROM questions WHERE "
         count = 0
@@ -266,8 +266,8 @@ class Database(abc.ABC):
     async def fetch_count(
         *,
         connection: aiomysql.Connection,
-        category_id: int | None = None,
-        topic_id: int | None = None,
+        category_id:Union[ int, None] = None,
+        topic_id:Union[ int, None] = None,
     ):
         """Fetches the number of topics for a category if category_id is given, or number
         of quizzes for a particular topic if topic_is given. It can either be category_id or
@@ -290,9 +290,9 @@ class Database(abc.ABC):
     async def fetch_quiz(
         *,
         connection: aiomysql.Connection,
-        term: str | None = None,
-        topic_id: int | None = None,
-        id: int | None = None,
+        term:Union[ str, None] = None,
+        topic_id:Union[ int, None] = None,
+        id:Union[ int, None] = None,
     ) -> List[Quiz]:
         query = "SELECT * FROM quiz"
         if topic_id:
