@@ -1,5 +1,5 @@
 from io import StringIO
-from typing import List, Tuple, Set
+from typing import List, Tuple, Set, Union
 import pandas as pd
 import random
 
@@ -20,7 +20,7 @@ def select_random(count: int, integers: List[int]) -> List[int]:
 
 # def copy_with_count()
 def copy_with_count(*,
-    count: int, category: Category | None = None, topic: Topic | None = None
+    count: int, category: Union[Category, None] = None, topic: Union[Topic,None] = None
 ):
     if category:
         if category.topic_count:
