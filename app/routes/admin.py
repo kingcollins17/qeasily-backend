@@ -83,7 +83,7 @@ async def remove_category(
 async def add_topic(
     topic: Topic,
     db: Annotated[aiomysql.Connection, Depends(get_db)],
-    user: Annotated[User | None, Depends(get_current_user)],
+    user: Annotated[Union[User, None], Depends(get_current_user)],
 ):
     await Database.add_topic(connection=db, topic=topic)
     return {"detail": f"Added Topic '{topic.title}'"}
@@ -108,8 +108,8 @@ async def update_topic(
 @route.get("/question")
 async def get_questions(
     db: Annotated[aiomysql.Connection, Depends(get_db)],
-    tid: int | None = None,
-    qid: int | None = None,
+    tid: Union[int, None] = None,
+    qid: Union[int, None] = None,
 ):
     try:
         if tid:
