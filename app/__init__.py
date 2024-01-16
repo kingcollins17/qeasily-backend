@@ -26,7 +26,7 @@ credentials: dict = {
 async def get_db():
     db: aiomysql.Connection
     try:
-          db = await aiomysql.connect(**credentials)
+          db = await aiomysql.connect(**credentials) #type: ignore
           yield db
     finally:
           db.close()

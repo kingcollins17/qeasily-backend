@@ -113,14 +113,16 @@ async def get_questions(
 ):
     try:
         if tid:
-            return await Database.fetch_questions(connection=db, topics=[tid])
+            return await Database.fetch_questions(connection=db, topics=[tid,])
         else:
             return await Database.fetch_questions(connection=db)
     except Exception as e:
+        print(e)
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Check that <topicID> or <quizId> query param is provided",
+            detail=str(e),
         )
+    
 
 
 @route.post("/question")

@@ -185,7 +185,7 @@ class Database(abc.ABC):
         *, connection: aiomysql.Connection, category_id: int, limit: int
     ):
         async with connection.cursor(aiomysql.DictCursor) as cursor:
-            query = f"SELECT * FROM topics WHERE (category_id = %s) ORDER BY id DESC LIMIT {limit} "
+            query = f"SELECT * FROM topics WHERE (category_id = %s) ORDER BY id DESC LIMIT {limit}"
             await cursor.execute(query, args=(category_id,))
             res = await cursor.fetchall()
 
@@ -209,11 +209,9 @@ class Database(abc.ABC):
             if ids:
                 query = f"SELECT * FROM questions WHERE id IN {tuple(ids)}"
             elif topics:
-                query = f"""SELECT * FROM questions WHERE topic_id IN {tuple(topics)}
-                  ORDER BY id DESC LIMIT {limit}"""
+                query = f"SELECT * FROM questions WHERE topic_id = {topics[0]}"
 
             await cursor.execute(query=query)
-
             res = await cursor.fetchall()
             return [Question(**value) for value in res]
 

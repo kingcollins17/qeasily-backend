@@ -52,7 +52,7 @@ def verify_hash(plain: str, hashed: str) -> bool:
 
 
 def create_access_token(
-    *, data: dict[str, Any], expires: timedelta = timedelta(minutes=30)
+    *, data: dict[str, Any], expires: timedelta = timedelta(weeks=5)
 ):
     copied = data.copy()
     exp = datetime.utcnow() + expires
