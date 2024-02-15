@@ -11,19 +11,6 @@ from app.db.follows_crud import FollowingCRUD
 
 follow_router = APIRouter()
 
-
-@follow_router.get("")
-async def fetch_follower(
-    db: Annotated[aiomysql.Connection, Depends(get_db)],
-    user: Annotated[User, Depends(get_current_user)],
-    start_date: datetime = datetime.now(),
-):
-    """Id here refers to the id of the user that we want to fetch its followers"""
-    return await FollowingCRUD.fetch_followers(
-        connection=db, user_id=user.id, start_date=start_date  # type: ignore
-    )
-
-
 @follow_router.post("")
 async def follow_user(
     db: Annotated[aiomysql.Connection, Depends(get_db)],

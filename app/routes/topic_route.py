@@ -39,14 +39,17 @@ async def get_topics(
 
 @topic_router.post("/create")
 async def add_topic(
-    db: Annotated[aiomysql.Connection, Depends(get_db)], topics: List[Topic]
+    db: Annotated[aiomysql.Connection, Depends(get_db)], topics: List[Topic],
+    user: Annotated[User, Depends(get_current_user)]
 ):
     try:
-        insert_id = await db_add_topic(connection=db, topics=topics)
-        return {
-            "detail": "Topics added successfully",
-            "topics": f"{insert_id} - {insert_id + (len(topics) - 1)}",
-        }
+        if user.type == 'Admin':
+            insert_id = await db_add_topic(connection=db, topics=topics)
+            return {
+                "detail": "Topics added successfully",
+                "topics": f"{insert_id} - {insert_id + (len(topics) - 1)}",
+            }
+        return {'detail': 'User cannot create a topic'}
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
