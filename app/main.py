@@ -5,66 +5,32 @@ from typing import List, Any, Annotated
 import aiomysql
 from fastapi import FastAPI, Depends, HTTPException, status
 from app.routes.auth import route as auth_route
-from app.routes.admin import route as admin_route
+# from app.routes.admin import route as admin_route
+from app.routes.categories_route import cats_router
+from app.routes.topic_route import topic_router
+from app.routes.follows_route import follow_router
+from app.routes.quiz_route import quiz_router
 
-from app.models import *
+from app.v_models import *
 from app.utils.util_routes import *
-from app.utils.util_functions import *
+from app.utils.csv_parser import *
 from app.db.database import Database
 
 
 app = FastAPI(title="Quiz Application Backend")
 
 app.include_router(auth_route, prefix="/auth")
-app.include_router(admin_route, prefix="/admin")
+# app.include_router(admin_route, prefix="/admin")
+app.include_router(cats_router, prefix='/categories')
+app.include_router(topic_router, prefix='/topics')
+app.include_router(follow_router, prefix='/follow')
+app.include_router(quiz_router, prefix='/quiz')
 
 
 @app.get("/count")
 async def get_count_data(db: Annotated[aiomysql.Connection, Depends(get_db)], id: int):
     data = await Database.fetch_count(connection=db, topic_id=id)
     return {"count": data}
-
-
-@app.get("/")
-async def index(db: Annotated[aiomysql.Connection, Depends(get_db)]) -> List[Category]:
-    data = await Database.fetch_categories(connection=db)
-    categories = [
-        Category(
-            id=cat.id,
-            name=cat.name,
-            topics=await Database.fetch_topics(
-                connection=db, category_id=cat.id, limit=10
-            ),
-        ).add_topic_count()
-        for cat in data
-        if cat.id
-    ]
-    return categories
-
-
-@app.get("/topics")
-async def get_topics(db: Annotated[aiomysql.Connection, Depends(get_db)], cat: int):
-    topics = await Database.fetch_topics(connection=db, category_id=cat, limit=1000)
-    return [
-        copy_with_count(
-            count=await Database.fetch_count(connection=db, topic_id=topic.id),
-            topic=topic,
-        )
-        for topic in topics
-    ]
-
-
-@app.get("/categories")
-async def get_categories(db: Annotated[aiomysql.Connection, Depends(get_db)]):
-    categories = await Database.fetch_categories(connection=db, limit=1000)
-    return [
-        copy_with_count(
-            count=await Database.fetch_count(connection=db, category_id=category.id),
-            category=category,
-        )
-        for category in categories
-    ]
-
 
 @app.get("/search")
 async def search(
@@ -78,26 +44,6 @@ async def search(
         detail=Error(msg="Item was not found!").msg,
     )
 
-
-@app.get("/quiz")
-async def get_quiz(
-    db: Annotated[aiomysql.Connection, Depends(get_db)],
-    # a search term
-    q: Union[str , None] = None,
-    topic: Union[int , None] = None,
-    id: Union[int , None ]= None,
-):
-    quiz: List[Quiz] = []
-    if q:
-        quiz = await Database.fetch_quiz(connection=db, term=q)
-    elif topic:
-        quiz = await Database.fetch_quiz(connection=db, topic_id=topic)
-    elif id:
-        quiz = await Database.fetch_quiz(connection=db, id=id)
-    else:
-        quiz = await Database.fetch_quiz(connection=db)
-    # Else, return quiz without quiz data
-    return quiz
 
 
 @app.get("/questions")

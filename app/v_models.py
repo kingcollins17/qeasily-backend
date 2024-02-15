@@ -13,17 +13,6 @@ class QuickStartConf(BaseModel):
     )
 
 
-class User(BaseModel):
-    id: Union[int, None] = Field(default=None, description="ID of user")
-    user_name: Union[str, None] = Field(
-        default=None, description="Username is not required during login"
-    )
-    email: str
-    password: str
-    admin: Union[bool, None] = Field(
-        default=False, description="Whether this user is an admin"
-    )
-
 
 class Topic(BaseModel):
     id: Union[int, None] = Field(default=None)
@@ -31,25 +20,6 @@ class Topic(BaseModel):
     description: str
     category_id: int
     quiz_count: Union[int, None] = Field(default=None, description='Number of quizzes this topic has')
-
-    
-
-class Category(BaseModel):
-    id: Union[int, None] = Field(default=None)
-    name: str
-    topics: Union[List[Topic], None] = Field(
-        default=None, description="List of topics under this category"
-    )
-    topic_count: Union[int, None] = Field(
-        default=None, description="The number of topics in this category"
-    )
-
-    def add_topic_count(self):
-        if self.topics:
-            self.topic_count = len(self.topics)
-        else:
-            self.topic_count = 0
-        return self
 
     
 

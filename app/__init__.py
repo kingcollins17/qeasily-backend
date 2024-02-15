@@ -29,5 +29,5 @@ async def get_db():
           db = await aiomysql.connect(**credentials) #type: ignore
           yield db
     finally:
-          db.close()
+          db.close() #type: ignore
     

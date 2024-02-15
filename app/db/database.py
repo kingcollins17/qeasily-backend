@@ -1,22 +1,23 @@
 import abc
 from typing import Any, List, Tuple, Dict
 import aiomysql
-from app.models import *
-from app.utils.util_functions import parse_question_list
+from app.v_models import *
+from app.utils.csv_parser import parse_question_list
+from app.models.categories_models import Category
 
 
 class Database(abc.ABC):
     """All relevant Database operations for this application"""
 
     @staticmethod
-    async def create_user(*, connection: aiomysql.Connection, user: User) -> None:
+    async def create_user(*, connection: aiomysql.Connection, user) -> None:
         async with connection.cursor() as cursor:
             query = "INSERT INTO users (user_name, email, password, admin) VALUES (%s,%s,%s,%s)"
             await cursor.execute(
-                query, (user.user_name, user.email, user.password, user.admin)
+                # query, (user.user_name, user.email, user.password, user.admin)
             )
         # commit changes to database
-        await connection.commit()
+        await  connection.commit()
 
     @staticmethod
     async def add_category(
@@ -162,14 +163,14 @@ class Database(abc.ABC):
     @staticmethod
     async def fetch_user(
         *, connection: aiomysql.Connection, identifier:Union[ int, str
-]    ) -> Union[User, None]:
+]    ) -> Union[Any, None]:
         async with connection.cursor(aiomysql.DictCursor) as cursor:
             query = "SELECT * FROM users WHERE (id = %s OR email = %s)"
             cursor: aiomysql.DictCursor = cursor
             await cursor.execute(query, args=(identifier, identifier))
         user = await cursor.fetchone()
         if user:
-            return User(**user)
+            return "User"
 
     @staticmethod
     async def fetch_categories(*, connection: aiomysql.Connection, limit=50):

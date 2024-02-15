@@ -3,7 +3,8 @@ from typing import List, Tuple, Set, Union
 import pandas as pd
 import random
 
-from app.models import Category, Topic
+from app.v_models import Topic
+from app.models.categories_models import Category
 
 
 #
@@ -17,28 +18,6 @@ def select_random(count: int, integers: List[int]) -> List[int]:
         res.add(random.choice(integers))
     return list(res)
 
-
-# def copy_with_count()
-def copy_with_count(*,
-    count: int, category: Union[Category, None] = None, topic: Union[Topic,None] = None
-):
-    if category:
-        if category.topic_count:
-            return category
-        # else return new copy category with topic_count
-        return Category(id=category.id, name=category.name, topic_count=count)
-    elif topic:
-        if topic.quiz_count:
-            return topic
-        return Topic(
-            id=topic.id,
-            title=topic.title,
-            description=topic.description,
-            category_id=topic.category_id,
-            quiz_count=count,
-        )
-    else:
-        raise Exception('Either category or topic must be given')
 
 
 def parse_csv(contents: str, topic_id: int, user_id: int) -> List[Tuple]:
