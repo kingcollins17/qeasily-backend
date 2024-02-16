@@ -3,17 +3,15 @@ import aiomysql
 from app.models.categories_models import *
 
 ### - 
-async def db_fetch_categories(*, connection: aiomysql.Connection, start: int, limit:int = 100):
+async def db_fetch_categories(*, connection: aiomysql.Connection):
     """Fetch <limit> categories records from db starting from <start> """
-    query = f"SELECT * FROM categories WHERE id > {start} ORDER BY id ASC LIMIT {limit}" 
+    query = f"SELECT id, name FROM categories" 
     async with connection.cursor(aiomysql.DictCursor) as cursor:
         cursor: aiomysql.DictCursor = cursor
         await cursor.execute(query=query)
      #    return (await cursor.fetchall(), await cursor.nextset())
         categories =  await cursor.fetchall()
-        await cursor.execute('SELECT COUNT(*) FROM categories')
-        count = await cursor.fetchone()
-        return {'categories': categories,'total': count['COUNT(*)']}
+        return categories
 
 
 
