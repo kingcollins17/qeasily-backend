@@ -16,9 +16,9 @@ async def get_categories(
     db: Annotated[aiomysql.Connection, Depends(get_db)],
 ):
     try:
-        res =  await db_fetch_categories(connection=db)  # type: ignore
-        return {'status': 'categories fetched', 'data': res}       
-      
+        res = await db_fetch_categories(connection=db)  # type: ignore
+        return {"detail": "categories fetched", "data": res}
+
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -31,7 +31,8 @@ async def add_categories(
     db: Annotated[aiomysql.Connection, Depends(get_db)], categories: List[Category]
 ):
     try:
-        return await db_add_categories(connection=db, categories=categories)
+        res = await db_add_categories(connection=db, categories=categories)
+        return {"detail": "Categories added successfully"}
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -44,7 +45,8 @@ async def update_category(
     db: Annotated[aiomysql.Connection, Depends(get_db)], category: Category
 ):
     try:
-        return await db_update_category(connection=db, category=category)
+        res = await db_update_category(connection=db, category=category)
+        return {"detail": "Categories update successfully"}
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

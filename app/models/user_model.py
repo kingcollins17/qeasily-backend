@@ -13,6 +13,10 @@ class User(BaseModel):
     type: Union[str, None] = Field(
         default="Basic", description="The type of user"
     )
+
+    def is_admin(self) -> bool:
+        return self.type == 'Admin'
+
     
 class RegisterUser(User):
     password: str

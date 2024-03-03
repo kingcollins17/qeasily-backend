@@ -16,14 +16,22 @@ topic_router = APIRouter()
 async def get_topics(
     db: Annotated[aiomysql.Connection, Depends(get_db)],
     page: PageInfo,
-    user: Annotated[User, Depends(get_current_user)], following: bool = False,
-        category: int | None =None,
+    user: Annotated[User, Depends(get_current_user)],
+    following: bool = False,
+    category: int | None = None,
 ):
-    """user is the id of the user. To fetch topics, you must provide either a start date, a category_id, or user_id"""
     try:
-        res =  await PagedTopicHandler(category_id=category, use_following=following, 
-                                       user_id=user.id).fetch_page(page, connection=db)
-        return {'meta': page,'topics': res[0], 'has_next_page': res[1]} #type: ignore
+        res = await PagedTopicHandler(
+            category_id=category, use_following=following, user_id=user.id
+        ).fetch_page(page, connection=db)
+        if res:
+            return {
+                "detail": 'Fetched successfully',
+                "data": res[0],
+                "has_next_page": res[1],
+                "page": page,
+            }  # type: ignore
+        raise Exception('No results')
         # return res
     except pymysql.err.OperationalError as err:
         raise HTTPException(
@@ -39,17 +47,20 @@ async def get_topics(
 
 @topic_router.post("/create")
 async def add_topic(
-    db: Annotated[aiomysql.Connection, Depends(get_db)], topics: List[Topic],
-    user: Annotated[User, Depends(get_current_user)]
+    db: Annotated[aiomysql.Connection, Depends(get_db)],
+    topics: List[Topic],
+    user: Annotated[User, Depends(get_current_user)],
 ):
     try:
-        if user.type == 'Admin':
+        if user.type == "Admin":
             insert_id = await db_add_topic(connection=db, topics=topics)
             return {
                 "detail": "Topics added successfully",
                 "topics": f"{insert_id} - {insert_id + (len(topics) - 1)}",
             }
-        return {'detail': 'User cannot create a topic'}
+        return {
+            "detail": "You are not an Admin!. Please Upgrade your plan to access this feature"
+        }
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -67,7 +78,7 @@ async def remove_topic(
         await db_delete_topic(
             connection=db, topic_id=topic, user_id=user.id  # type: ignore
         )
-        return {"detail": "Operation successful"}
+        return {"detail": "Topic successfully deleted"}
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

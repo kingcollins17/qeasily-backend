@@ -22,6 +22,7 @@ CREATE TABLE
           `challenge_id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
           `user_id` INT UNSIGNED NOT NULL,
           `points` INT UNSIGNED NOT NULL DEFAULT 0,
+          `progress` INT UNSIGNED NOT NULL DEFAULT 0,
           PRIMARY KEY `pk_id` (`challenge_id`, `user_id`),
           CONSTRAINT `fk_lead_chal` FOREIGN KEY (`challenge_id`) 
           REFERENCES `challenges` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION,
