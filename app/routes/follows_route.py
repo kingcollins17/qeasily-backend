@@ -44,4 +44,4 @@ async def unfollow_user(
         connection=db, followed_id=id, follower_id=user.id  # type:ignore
     )
     return {"detail": "Unfollowed user"}
-    pass
+
