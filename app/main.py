@@ -10,6 +10,7 @@ from app.routes.categories_route import cats_router
 from app.routes.topic_route import topic_router
 from app.routes.follows_route import follow_router
 from app.routes.quiz_route import quiz_router
+from app.routes.challenge import router as ch_router
 
 from app.v_models import *
 from app.utils.util_routes import *
@@ -24,4 +25,5 @@ app.include_router(cats_router, prefix='/categories')
 app.include_router(topic_router, prefix='/topics')
 app.include_router(follow_router, prefix='/follow')
 app.include_router(quiz_router, prefix='/quiz')
+app.include_router(ch_router, prefix='/challenge')
 
