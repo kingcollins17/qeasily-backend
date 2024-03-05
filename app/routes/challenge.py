@@ -47,6 +47,40 @@ async def get_challenges(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
+@router.get("/created-challenges")
+async def fetch_created_challenges(
+    db: Annotated[aiomysql.Connection, Depends(get_db)],
+    user: Annotated[User, Depends(get_current_user)],
+    page: PageInfo,
+):
+    try:
+        async with db.cursor(aiomysql.DictCursor) as cursor:
+            cursor: aiomysql.DictCursor = cursor
+            await cursor.execute(
+                f"""SELECT * from challenges WHERE user_id = {user.id}
+                    ORDER BY date_added ASC LIMIT {page.per_page + 1} OFFSET {_offset(page)}"""
+            )
+            res = await cursor.fetchall()
+            if res and (len(res) > page.per_page):
+                data = (
+                    [res[i] for i in range(len(res) - 1)],
+                    len(res) > page.per_page,
+                )
+            else:
+                data = (res, False)
+            # reuturn users creation
+            if data:
+                return {
+                    "detail": "Your published challenges fetched",
+                    "data": data[0],
+                    "has_next_page": data[1],
+                    "page": page,
+                }
+            raise Exception("No results")
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"{e}")
+
+
 @router.get("/details")
 async def get_challenge_details(
     cid: int,
@@ -69,8 +103,43 @@ async def start_challenge(
     try:
         await _start_challenge(connection=db, cid=cid, user=user)
         return {"detail": "You have successully entered the challenge"}
+    except pymysql.IntegrityError as _:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="You are already participating in this challenge",
+        )
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+
+@router.get("/next-task")
+async def fetch_next_task(
+    db: Annotated[aiomysql.Connection, Depends(get_db)],
+    user: Annotated[User, Depends(get_current_user)],
+):
+    pass
+
+
+@router.post("/save-progress")
+async def save_progress(
+    db: Annotated[aiomysql.Connection, Depends(get_db)],
+    user: Annotated[User, Depends(get_current_user)],
+    score: int,
+    qid: int,
+    cid: int,
+):
+    try:
+        res = await _save_challenge_progress(
+            connection=db,
+            points=score,
+            quiz=qid,
+            challenge_id=cid,
+            user=user,
+        )
+
+        return {"detail": "Your progress has been saved", "data": res}
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"{e}")
 
 
 @router.get("/me")
@@ -78,7 +147,7 @@ async def get_current_challenges(
     db: Annotated[aiomysql.Connection, Depends(get_db)],
     user: Annotated[User, Depends(get_current_user)],
 ):
-    """Fetches the current challenges that the user is in"""
+    """Fetches the current challenges that the user is participating"""
     try:
         query00 = f"""SELECT * FROM challenges WHERE id IN 
         (SELECT challenge_id FROM leaderboards WHERE user_id = {user.id})"""
@@ -115,14 +184,14 @@ async def add_challenge(
 async def delete_challenge(
     db: Annotated[aiomysql.Connection, Depends(get_db)],
     user: Annotated[User, Depends(get_current_user)],
-    id: int,
+    cid: int,
 ):
     try:
         if user.is_admin() == True:
             async with db.cursor() as cursor:
                 cursor: aiomysql.Cursor = cursor
                 await cursor.execute(
-                    f"DELETE from challenges WHERE id = {id} AND user_id = {user.id}"
+                    f"DELETE from challenges WHERE id = {cid} AND user_id = {user.id}"
                 )
             await db.commit()
             return {"detail": "Challenge deleted successfully"}
@@ -137,11 +206,11 @@ async def delete_challenge(
 async def get_leaderboards(
     db: Annotated[aiomysql.Connection, Depends(get_db)],
     #     user: Annotated[User, Depends(get_current_user)],
-    id: int,
+    cid: int,
     page: PageInfo,
 ):
     try:
-        res = await _fetch_leaderboards(connection=db, id=id, page=page)
+        res = await _fetch_leaderboards(connection=db, id=cid, page=page)
         return {
             "detail": f"Fetched leaderboards page {page.page} successfully",
             "data": res[0],
@@ -163,6 +232,23 @@ async def _start_challenge(*, connection: aiomysql.Connection, cid: int, user: U
         await cursor.execute(query, args=(cid, user.id))
 
     await connection.commit()
+
+
+async def _save_challenge_progress(
+    *, connection: aiomysql.Connection, points: int, quiz: int, user: User, challenge_id
+):
+    query00 = f"SELECT quizzes FROM challenges WHERE id = {challenge_id}"
+    query01 = """UPDATE leaderboards SET points = %s, 
+        progress = progress + 1 WHERE user_id = %s AND challenge_id = %s"""
+    async with connection.cursor(aiomysql.DictCursor) as cursor:
+
+        cursor: aiomysql.DictCursor = cursor
+        await cursor.execute(query00)
+        res = await cursor.fetchone()
+        return str(res)
+    # NOTE: Complete this function
+    # await cursor.execute(query01, args=(points, user.id, challenge_id))
+    # await connection.commit()
 
 
 async def _fetch_leaderboards(

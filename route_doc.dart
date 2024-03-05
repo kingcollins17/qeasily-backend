@@ -5,6 +5,7 @@ const categoryPrefix = '/categories';
 const topicsPrefix = '/topics';
 const quizPrefix = '/quiz';
 const followPrefix = '/follow';
+const challengePrefix = '/challenge';
 
 ///Holds all the details of the backend endpoints for the qeasily application
 ///Each enumeration is an endpoint in the app
@@ -96,12 +97,12 @@ enum APIUrl {
   //-------------------------------------
   //-------------------------------------
   //All "/quiz" prefixed routes
-  quiz(quizPrefix, '', queryParams: ['topic=4'], body: pageInfoBody),
+  fetchQuiz(quizPrefix, '', queryParams: ['topic=4'], body: pageInfoBody),
   quizFromCategory(
     quizPrefix,
-    '/',
+    '/by-category',
     body: pageInfoBody,
-    queryParams: ['level=400'],
+    queryParams: ['cid=10&level=400'],
     extras:
         'This route takes in a path parameter of the category_id thus; /<category_id>',
   ),
@@ -111,12 +112,62 @@ enum APIUrl {
     body: pageInfoBody,
     requiresAuth: true,
   ),
+  deleteQuiz(quizPrefix, '/delete',
+      method: _Method.delete, queryParams: ['qid=19']),
   //-------------------------------------
 
   follow(followPrefix, '',
       requiresAuth: true, queryParams: ['id=7'], method: _Method.post),
   unfollow(followPrefix, '',
       requiresAuth: true, queryParams: ['id=7'], method: _Method.delete),
+
+  fetchChallenges(challengePrefix, '',
+      method: _Method.get, queryParams: ['feed=true'], body: pageInfoBody),
+  fetchUserCreatedChallenges(challengePrefix, '/created-challenges',
+      body: pageInfoBody),
+  fetchChallengeDetails(
+    challengePrefix,
+    'details',
+    method: _Method.get,
+    queryParams: ['cid=10'],
+    extras: 'cid is Challenge Id',
+  ),
+  startChallenge(
+    challengePrefix,
+    '/start',
+    method: _Method.get,
+    extras: 'Query this endpoint to enter a challenge. '
+        'This endpoints initializes your entry in the leaderboards table',
+  ),
+  saveChallengeProgress(challengePrefix, '/save-progress',
+      method: _Method.post, extras: 'This route is not completed yet!'),
+
+  fetchCurrentChallenges(challengePrefix, '/me',
+      method: _Method.get,
+      extras:
+          'Fetches the  current challenges that a user is participating in'),
+
+  createChallenge(
+    challengePrefix,
+    '/admin routes for admins to create a challenge',
+    method: _Method.post,
+    body: challengeBody,
+  ),
+  deleteChallenge(challengePrefix, '/delete',
+      method: _Method.delete, queryParams: ['cid=6']),
+
+  fetchNextTask(
+    challengePrefix,
+    '/next-task',
+    extras: 'Fetches the next task of a challenge giving the users progress',
+  ),
+  fetchLeaderboards(
+    challengePrefix,
+    '/leaderboards',
+    method: _Method.get,
+    extras: 'Fetch the leaderboards of a current challenge',
+  ),
+
   ;
 
   final String prefix, path;
@@ -159,6 +210,15 @@ const profileBody = {
   'user_id': ''
 };
 
-void main() {
-  print(APIUrl.quizFromCategory.doc);
-}
+const challengeBody = {
+  'name': 'Hot Challenge',
+  'quizzes': [7, 6, 87, 3, 5],
+  'paid': true,
+  'entry_fee': 50.0,
+  'reward': 5000,
+  'duration': 7,
+};
+
+// void main() {
+//   print(APIUrl.quizFromCategory.doc);
+// }
