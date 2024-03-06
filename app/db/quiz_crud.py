@@ -9,7 +9,6 @@ class PagedQuizHandler(PageHandler):
 
     def __init__(
         self,
-        use_likes: bool = False,
         use_following: bool = False,
         search_term: str | None = None,
         topic_id: int | None = None,
@@ -19,7 +18,6 @@ class PagedQuizHandler(PageHandler):
     ) -> None:
         """The other of preferences for filters is use_following > topic_Id > category_id > level
         > use_likes > search_term"""
-        self.use_likes = use_likes
         self.search_term = search_term
         self.topic_id = topic_id
         self.category_id = category_id

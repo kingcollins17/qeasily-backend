@@ -279,7 +279,10 @@ async def _fetch_next_task(
         ]
         # return quizzes
         await cursor.execute(query01)
-        progress = (await cursor.fetchone())["progress"]
+        temp = (await cursor.fetchone())
+        progress =  temp["progress"]
+        if not temp:
+            raise Exception('You are not a participant in this challenge')
 
         if progress >= len(quizzes):
             raise Exception("You have completed all tasks in this challenge")

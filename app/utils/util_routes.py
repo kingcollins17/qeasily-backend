@@ -1,6 +1,6 @@
 # Util functions for user routes mostly
 
-from typing import Any, List, Annotated
+from typing import Any, List, Annotated, Tuple
 from fastapi import Depends
 import aiomysql
 from app import get_db
@@ -30,3 +30,12 @@ def offset(page: PageInfo) -> int:
         return 0
     else:
         return (page.page - 1) * page.per_page
+
+
+def parse_list(res: List[Any], page: PageInfo) -> Tuple[list[Any], bool]:
+    if res and (len(res) > page.per_page):
+        return (
+            [res[i] for i in range(len(res) - 1)],
+            len(res) > page.per_page,
+        )
+    return (res, False)
