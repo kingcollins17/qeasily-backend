@@ -116,28 +116,31 @@ async def start_challenge(
 async def fetch_next_task(
     db: Annotated[aiomysql.Connection, Depends(get_db)],
     user: Annotated[User, Depends(get_current_user)],
+    cid: int,
 ):
-    pass
+    try:
+        res = await _fetch_next_task(connection=db, challenge_id=cid, user_id=user.id)  # type: ignore
+        return {"detail": "Fetched next task", "data": res}
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"{e}")
 
 
 @router.post("/save-progress")
 async def save_progress(
     db: Annotated[aiomysql.Connection, Depends(get_db)],
     user: Annotated[User, Depends(get_current_user)],
-    score: int,
-    qid: int,
+    points: int,
     cid: int,
 ):
     try:
         res = await _save_challenge_progress(
             connection=db,
-            points=score,
-            quiz=qid,
+            points=points,
             challenge_id=cid,
             user=user,
         )
 
-        return {"detail": "Your progress has been saved", "data": res}
+        return {"detail": "Your progress has been saved. Go to next Task"}
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"{e}")
 
@@ -235,20 +238,55 @@ async def _start_challenge(*, connection: aiomysql.Connection, cid: int, user: U
 
 
 async def _save_challenge_progress(
-    *, connection: aiomysql.Connection, points: int, quiz: int, user: User, challenge_id
+    *, connection: aiomysql.Connection, points: int, user: User, challenge_id
 ):
     query00 = f"SELECT quizzes FROM challenges WHERE id = {challenge_id}"
-    query01 = """UPDATE leaderboards SET points = %s, 
+    query01 = f"SELECT * FROM leaderboards WHERE user_id = {user.id} AND challenge_id = {challenge_id}"
+    query02 = """UPDATE leaderboards SET points = points + %s, 
         progress = progress + 1 WHERE user_id = %s AND challenge_id = %s"""
     async with connection.cursor(aiomysql.DictCursor) as cursor:
-
         cursor: aiomysql.DictCursor = cursor
         await cursor.execute(query00)
         res = await cursor.fetchone()
-        return str(res)
-    # NOTE: Complete this function
-    # await cursor.execute(query01, args=(points, user.id, challenge_id))
-    # await connection.commit()
+        quizzes = str(res["quizzes"]).removeprefix("[").removesuffix("]").split(",")
+
+        await cursor.execute(query01)
+        progress = (await cursor.fetchone())["progress"]
+        # check if progress is not in range
+        if progress >= len(quizzes):
+            raise Exception("progress is out of range!")
+        else:
+            await cursor.execute(query02, args=(points, user.id, challenge_id))
+            await connection.commit()
+
+
+async def _fetch_next_task(
+    *, connection: aiomysql.Connection, challenge_id: int, user_id: int
+):
+
+    query00 = f"SELECT quizzes FROM challenges WHERE id = {challenge_id}"
+    query01 = f"SELECT progress FROM leaderboards WHERE user_id = {user_id} AND challenge_id = {challenge_id}"
+    query02 = "SELECT * FROM quiz WHERE id = %s"
+    async with connection.cursor(aiomysql.DictCursor) as cursor:
+        cursor: aiomysql.Cursor = cursor
+        await cursor.execute(query00)
+        quizzes = [
+            int(value)
+            for value in str((await cursor.fetchone())["quizzes"])
+            .removeprefix("[")
+            .removesuffix("]")
+            .split(",")
+        ]
+        # return quizzes
+        await cursor.execute(query01)
+        progress = (await cursor.fetchone())["progress"]
+
+        if progress >= len(quizzes):
+            raise Exception("You have completed all tasks in this challenge")
+
+        next_task_id = quizzes[progress]
+        await cursor.execute(query02, args=(next_task_id,))
+        return await cursor.fetchone()
 
 
 async def _fetch_leaderboards(

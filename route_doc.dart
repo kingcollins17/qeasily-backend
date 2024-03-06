@@ -6,6 +6,7 @@ const topicsPrefix = '/topics';
 const quizPrefix = '/quiz';
 const followPrefix = '/follow';
 const challengePrefix = '/challenge';
+const questionsPrefix = '/questions';
 
 ///Holds all the details of the backend endpoints for the qeasily application
 ///Each enumeration is an endpoint in the app
@@ -167,7 +168,6 @@ enum APIUrl {
     method: _Method.get,
     extras: 'Fetch the leaderboards of a current challenge',
   ),
-
   ;
 
   final String prefix, path;
