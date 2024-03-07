@@ -51,53 +51,53 @@ async def login_user(user: Annotated[LoginUser, Depends(authenticate)]):
     return {"token": create_access_token(data=user.model_dump()), "user": user}
 
 
-@route.get("/profile")
-async def get_profile(
-    id: int,
-    user: Annotated[User, Depends(get_current_user)],
-    db: Annotated[aiomysql.Connection, Depends(get_db)],
-):
-    if await db_user_has_profile(connection=db, id=id):  # type: ignore
-        try:
-            profile = await db_fetch_user_profile(connection=db, user_id=id)  # type: ignore
-            return {"detail": f'User profile {profile["reg_no"]}', "profile": profile}  # type: ignore
+# @route.get("/profile")
+# async def get_profile(
+#     id: int,
+#     user: Annotated[User, Depends(get_current_user)],
+#     db: Annotated[aiomysql.Connection, Depends(get_db)],
+# ):
+#     if await db_user_has_profile(connection=db, id=id):  # type: ignore
+#         try:
+#             profile = await db_fetch_user_profile(connection=db, user_id=id)  # type: ignore
+#             return {"detail": f'User profile {profile["reg_no"]}', "profile": profile}  # type: ignore
 
-        except Exception:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST, detail="Something went wrong"
-            )
+#         except Exception:
+#             raise HTTPException(
+#                 status_code=status.HTTP_400_BAD_REQUEST, detail="Something went wrong"
+#             )
 
-    else:
-        # return {"detail": "User does not have any profile"}
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="User Profile not found"
-        )
-
-
-@route.post("/profile/create", dependencies=[Depends(oauth_scheme)])
-async def create_user_profile(
-    profile: UserProfile,
-    db: Annotated[aiomysql.Connection, Depends(get_db)],
-):
-    try:
-        await db_create_user_profile(connection=db, profile=profile)
-        return {"detail": "Profile created successfully", "profile": profile}
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Unable to create User Profile",
-        )
+#     else:
+#         # return {"detail": "User does not have any profile"}
+#         raise HTTPException(
+#             status_code=status.HTTP_404_NOT_FOUND, detail="User Profile not found"
+#         )
 
 
-@route.put("/profile/update", dependencies=[Depends(get_current_user)])
-async def has_profile(
-    profile: UserProfile, db: Annotated[aiomysql.Connection, Depends(get_db)]
-):
-    # return {'detail': await db_user_has_profile(connection=db, id=id)}
-    try:
-        await db_update_user_profile(connection=db, profile=profile)
-        return {"detail": "Profile updated", "new_profile": profile}
-    except Exception:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="Unable to update profile"
-        )
+# @route.post("/profile/create", dependencies=[Depends(oauth_scheme)])
+# async def create_user_profile(
+#     profile: UserProfile,
+#     db: Annotated[aiomysql.Connection, Depends(get_db)],
+# ):
+#     try:
+#         await db_create_user_profile(connection=db, profile=profile)
+#         return {"detail": "Profile created successfully", "profile": profile}
+#     except Exception as e:
+#         raise HTTPException(
+#             status_code=status.HTTP_400_BAD_REQUEST,
+#             detail="Unable to create User Profile",
+#         )
+
+
+# @route.put("/profile/update", dependencies=[Depends(get_current_user)])
+# async def has_profile(
+#     profile: UserProfile, db: Annotated[aiomysql.Connection, Depends(get_db)]
+# ):
+#     # return {'detail': await db_user_has_profile(connection=db, id=id)}
+#     try:
+#         await db_update_user_profile(connection=db, profile=profile)
+#         return {"detail": "Profile updated", "new_profile": profile}
+#     except Exception:
+#         raise HTTPException(
+#             status_code=status.HTTP_400_BAD_REQUEST, detail="Unable to update profile"
+#         )

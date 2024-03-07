@@ -59,7 +59,7 @@ async def fetch_all_mcqs(
     page: PageInfo,
 ):
     try:
-        query00 = "SELECT * FROM mcqs WHERE topic_id = %s LIMIT %s OFFSET %s"
+        query00 = "SELECT * FROM mcqs WHERE topic_id = %s ORDER BY id DESC LIMIT %s OFFSET %s"
         async with db.cursor(aiomysql.DictCursor) as cursor:
             cursor: aiomysql.DictCursor = cursor
             await cursor.execute(
@@ -185,6 +185,24 @@ async def delete_mcq(
 ):
     try:
         query = f"DELETE FROM mcqs WHERE id IN {tuple(ids)} AND user_id = %s"
+        async with db.cursor() as cursor:
+            cursor: aiomysql.Cursor = cursor
+            await cursor.execute(query, args=(user.id,))
+            await db.commit()
+            return {"detail": f"Questions {ids} deleted successfully"}
+
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"{e}")
+
+
+@router.delete("/delete-dcq")
+async def delete_dcq(
+    db: Annotated[aiomysql.Connection, Depends(get_db)],
+    ids: List[int],
+    user: Annotated[User, Depends(get_current_user)],
+):
+    try:
+        query = f"DELETE FROM dcqs WHERE id IN {tuple(ids)} AND user_id = %s"
         async with db.cursor() as cursor:
             cursor: aiomysql.Cursor = cursor
             await cursor.execute(query, args=(user.id,))
