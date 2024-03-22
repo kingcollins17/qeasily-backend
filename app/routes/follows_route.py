@@ -8,7 +8,7 @@ from app.dependencies.path_deps import get_current_user
 from app.models.page_request import PageInfo
 from app.models.user_model import *
 from app.db.follows_crud import FollowingCRUD
-from app.utils.util_routes import offset
+from app.utils.util_routes import offset, parse_list
 
 
 follow_router = APIRouter()
@@ -49,14 +49,41 @@ async def unfollow_user(
     return {"detail": "Unfollowed user"}
 
 
+@follow_router.get("/followers")
+async def get_followers(
+    db: Annotated[aiomysql.Connection, Depends(get_db)],
+    user: Annotated[User, Depends(get_current_user)],
+    page: PageInfo,
+):
+    try:    
+        data =  await fetch_followers(connection=db, user_id=user.id, page=page) #type: ignore
+        return {'detail': 'Fetched successfully', 'data': data[0], 'has_next_page': data[1]}
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+
 @follow_router.get("/accounts")
 async def fetch_users(
     db: Annotated[aiomysql.Connection, Depends(get_db)],
     user: Annotated[User, Depends(get_current_user)],
     page: PageInfo,
 ):
-    return await suggest_accounts(connection=db,user=user, page=page)
-    
+    try:
+        data = await suggest_accounts(connection=db, user=user, page=page)
+        return {"detail": "Fetched accounts", "data": data}
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+
+async def fetch_followers(
+    *, connection: aiomysql.Connection, user_id: int, page: PageInfo
+):
+    q0 = "SELECT * FROM followings WHERE followed_id = %s ORDER BY date_followed DESC LIMIT %s OFFSET %s"
+    async with connection.cursor(aiomysql.DictCursor) as cursor:
+        cursor: aiomysql.DictCursor = cursor
+        await cursor.execute(q0, args=(user_id, page.per_page + 1, offset(page)))
+        data = await cursor.fetchall()
+        return parse_list(data, page)
 
 
 async def suggest_accounts(
@@ -78,9 +105,9 @@ async def suggest_accounts(
              WHERE users_profile.department REGEXP %s AND users.id != %s AND users.type = 'Admin' 
              ORDER BY _qstats.total_quiz DESC LIMIT %s OFFSET %s"""
             # NOTE Complete function
-            await cursor.execute(query01, args=(dept, user.id, page.per_page + 1, offset(page)))
+            await cursor.execute(
+                query01, args=(dept, user.id, page.per_page + 1, offset(page))
+            )
             return await cursor.fetchall()
 
         raise Exception("User does not have any profile data")
-
-

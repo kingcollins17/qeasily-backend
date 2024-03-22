@@ -1,0 +1,6 @@
+#config file for curl
+
+-H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXNlcl9uYW1lIjpudWxsLCJlbWFpbCI6ImtpbmdAZ21haWwuY29tIiwidHlwZSI6IkFkbWluIiwiZXhwIjoxNzE0MDc3OTE3fQ.g0X63nwCOAMUxgsgrIbUizqo7YV4rnC8m-0avm2kRS0"
+
+-H "Content-Type: application/json"
+-o "output.json"

@@ -1,4 +1,3 @@
---USE quiz;
 
 -- DROP TABLE IF EXISTS `mcqs`;
 -- DROP TABLE IF EXISTS `dcqs`;
@@ -59,6 +58,20 @@
 --           FOREIGN KEY (`user_id`) REFERENCES `quiz`.`users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
 --           FOREIGN KEY (`topic_id`) REFERENCES `quiz`.`topics` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 --      ) ENGINE = InnoDB;
+
+
+-- DROP TABLE IF EXISTS `activity`;
+CREATE TABLE `activity` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `plan` ENUM('Free', 'Scholar', 'Genius', 'Admin') NOT NULL DEFAULT 'Free',
+  `balance` DECIMAL NOT NULL DEFAULT 0.0,
+  `quizzes_left` INT UNSIGNED NOT NULL DEFAULT 10,
+  `challenges_left` INT UNSIGNED NOT NULL DEFAULT 5,
+  `renewed_at` DATETIME NOT NULL DEFAULT NOW(),
+  `user_id` INT UNSIGNED NOT NULL UNIQUE,
+  PRIMARY KEY `pk_id`(`id`),
+  FOREIGN KEY (`user_id`) REFERENCES `quiz`.`users`(`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE = InnoDB;
 
 
 -- INSERT INTO

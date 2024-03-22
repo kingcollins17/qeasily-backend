@@ -1,4 +1,4 @@
-from typing import Annotated, Any, List
+from typing import Annotated, Any, List, Tuple
 
 import aiomysql
 import pymysql
@@ -51,53 +51,32 @@ async def login_user(user: Annotated[LoginUser, Depends(authenticate)]):
     return {"token": create_access_token(data=user.model_dump()), "user": user}
 
 
-# @route.get("/profile")
-# async def get_profile(
-#     id: int,
-#     user: Annotated[User, Depends(get_current_user)],
-#     db: Annotated[aiomysql.Connection, Depends(get_db)],
-# ):
-#     if await db_user_has_profile(connection=db, id=id):  # type: ignore
-#         try:
-#             profile = await db_fetch_user_profile(connection=db, user_id=id)  # type: ignore
-#             return {"detail": f'User profile {profile["reg_no"]}', "profile": profile}  # type: ignore
+@route.get('/dashboard')
+async def get_dashboard(db: Annotated[aiomysql.Connection, Depends(get_db)], user: Annotated[User, Depends(get_current_user)]):
+    try:
+        data = await fetch_dashboard(connection=db, user_id = user.id) #type: ignore
+        return {'detail': 'Fetched dashboard successfully', 'data': data}
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    
+# CRUD OPERATIONS
+async def fetch_dashboard(*, connection: aiomysql.Connection, user_id: int):
 
-#         except Exception:
-#             raise HTTPException(
-#                 status_code=status.HTTP_400_BAD_REQUEST, detail="Something went wrong"
-#             )
+    query00 = "SELECT * FROM users_profile WHERE user_id = %s"
+    query01 = "SELECT * FROM activity WHERE user_id = %s"
+    query02 = "SELECT * FROM _qstats WHERE id = %s"
+    query03 = "SELECT COUNT(*) as total_mcqs FROM mcqs WHERE user_id = %s"
+    query04 = "SELECT COUNT(*) as total_dcqs FROM dcqs WHERE user_id = %s"
+    query05 = "SELECT COUNT(*) as following FROM follows WHERE follower_id = %s"
 
-#     else:
-#         # return {"detail": "User does not have any profile"}
-#         raise HTTPException(
-#             status_code=status.HTTP_404_NOT_FOUND, detail="User Profile not found"
-#         )
-
-
-# @route.post("/profile/create", dependencies=[Depends(oauth_scheme)])
-# async def create_user_profile(
-#     profile: UserProfile,
-#     db: Annotated[aiomysql.Connection, Depends(get_db)],
-# ):
-#     try:
-#         await db_create_user_profile(connection=db, profile=profile)
-#         return {"detail": "Profile created successfully", "profile": profile}
-#     except Exception as e:
-#         raise HTTPException(
-#             status_code=status.HTTP_400_BAD_REQUEST,
-#             detail="Unable to create User Profile",
-#         )
-
-
-# @route.put("/profile/update", dependencies=[Depends(get_current_user)])
-# async def has_profile(
-#     profile: UserProfile, db: Annotated[aiomysql.Connection, Depends(get_db)]
-# ):
-#     # return {'detail': await db_user_has_profile(connection=db, id=id)}
-#     try:
-#         await db_update_user_profile(connection=db, profile=profile)
-#         return {"detail": "Profile updated", "new_profile": profile}
-#     except Exception:
-#         raise HTTPException(
-#             status_code=status.HTTP_400_BAD_REQUEST, detail="Unable to update profile"
-#         )
+    queries = [query00, query01, query02, query03, query04, query05]
+    results: List[Any] = []
+    async with connection.cursor(aiomysql.DictCursor) as cursor:
+        cursor: aiomysql.DictCursor = cursor
+        for query in queries:
+            await cursor.execute(query, args=(user_id,))
+            results.append(await cursor.fetchone())
+    result_dict = {}
+    for data in results:
+        result_dict = {**result_dict, **data}
+    return result_dict

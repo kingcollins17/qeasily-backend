@@ -7,6 +7,7 @@ const quizPrefix = '/quiz';
 const followPrefix = '/follow';
 const challengePrefix = '/challenge';
 const questionsPrefix = '/questions';
+const activityPrefix = '/activity';
 
 ///Holds all the details of the backend endpoints for the qeasily application
 ///Each enumeration is an endpoint in the app
@@ -31,7 +32,22 @@ enum APIUrl {
       'password': 'password'
     },
   ),
+  search('/search', '',
+      requiresAuth: false,
+      body: pageInfoBody,
+      queryParams: ['query=Test'],
+      extras:
+          'Searches the topics, quizzes and challenges database for the query'),
   user(authPrefix, '/user', requiresAuth: false),
+  fetchDashboard(authPrefix, '/dashboard',
+      method: _Method.get, requiresAuth: true),
+
+  //
+  createActivity(activityPrefix, '/create',
+      method: _Method.post, requiresAuth: true),
+  fetchActivity(activityPrefix, '', method: _Method.get, requiresAuth: true),
+  consumerQuiz(activityPrefix, '/consume-quiz'),
+  consumerChallenge(activityPrefix, '/consume-challenge', method: _Method.get),
   //------------------------------
   //------------------------------
   //All "/categories" prefixed route
@@ -117,10 +133,16 @@ enum APIUrl {
       requiresAuth: true, queryParams: ['id=7'], method: _Method.post),
   unfollow(followPrefix, '',
       requiresAuth: true, queryParams: ['id=7'], method: _Method.delete),
+fetchAccountToFollow(followPrefix, '/accounts',
+      method: _Method.get, requiresAuth: true, body: pageInfoBody),
+
+  fetchFollowers(followPrefix, '/followers',
+      body: pageInfoBody, method: _Method.get),
 
   fetchChallenges(challengePrefix, '',
       method: _Method.get, queryParams: ['feed=true'], body: pageInfoBody),
-    
+
+
   fetchUserCreatedChallenges(challengePrefix, '/created-challenges',
       body: pageInfoBody),
 
@@ -155,7 +177,7 @@ enum APIUrl {
   ),
   deleteChallenge(challengePrefix, '/delete',
       method: _Method.delete, queryParams: ['cid=6']),
-fetchCreatedChallenges(
+  fetchCreatedChallenges(
     challengePrefix,
     '/created-challenge',
     body: pageInfoBody,
@@ -192,7 +214,7 @@ fetchCreatedChallenges(
       method: _Method.delete, body: [4, 6, 3, 1, 4]),
   deleteDcq(questionsPrefix, '/delete-dcq',
       method: _Method.delete, body: [6, 7, 4, 22, 5, 6]),
-  createDcq(questionsPrefix, '/created-dcq',
+  createDcq(questionsPrefix, '/create-dcq',
       body: [
         {'query': '', 'correct': true, 'explanation': 'blah', 'topic_id': 5},
       ],
