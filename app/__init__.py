@@ -7,11 +7,11 @@ load_dotenv()
 
 import aiomysql
 
-DB_HOST = str(os.getenv("HOST"))
-DB_PORT = int(str(os.getenv("PORT")))
-DB_USER = str(os.getenv("USER"))
-DB_PASSWORD = str(os.getenv("PASSWORD"))
-DB_NAME = str(os.getenv("NAME"))
+DB_HOST = str(os.getenv("DB_HOST"))
+DB_PORT = int(str(os.getenv("DB_PORT")))
+DB_USER = str(os.getenv("DB_USER"))
+DB_PASSWORD = str(os.getenv("DB_PASSWORD"))
+DB_NAME = str(os.getenv("DB_NAME"))
 
 PUBLIC_KEY = str(os.getenv("P_KEY"))
 SECRET_KEY = str(os.getenv("S_KEY"))
