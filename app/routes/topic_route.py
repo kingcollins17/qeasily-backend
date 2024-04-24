@@ -7,31 +7,32 @@ from app import get_db
 from app.dependencies.path_deps import get_current_user
 from app.db.topics_crud import *
 from app.models.user_model import User
+from app.utils.util_routes import *
 
 
 topic_router = APIRouter()
 
 
 @topic_router.get("")
-async def get_topics(
+async def fetch_topics(
     db: Annotated[aiomysql.Connection, Depends(get_db)],
     page: PageInfo,
     user: Annotated[User, Depends(get_current_user)],
-    following: bool = False,
-    category: int | None = None,
+    category_id: int | None = None,
+    level: str | None = None,
 ):
     try:
-        res = await PagedTopicHandler(
-            category_id=category, use_following=following, user_id=user.id
-        ).fetch_page(page, connection=db)
+        res = await _fetch_topics(
+            connection=db, page=page, category_id=category_id, level=level
+        )
         if res:
             return {
-                "detail": 'Fetched successfully',
+                "detail": "Fetched successfully",
                 "data": res[0],
                 "has_next_page": res[1],
                 "page": page,
             }  # type: ignore
-        raise Exception('No results')
+        raise Exception("No results")
         # return res
     except pymysql.err.OperationalError as err:
         raise HTTPException(
@@ -45,6 +46,33 @@ async def get_topics(
         )
 
 
+@topic_router.get("/created-topics")
+async def fetch_user_created_topics(
+    db: Annotated[aiomysql.Connection, Depends(get_db)],
+    user: Annotated[User, Depends(get_current_user)],
+    page: PageInfo,
+):
+    try:
+        query = """SELECT topics.*, categories.name as category,
+        users.user_name as creator FROM topics    
+        LEFT JOIN users ON users.id = topics.user_id 
+        LEFT JOIN categories ON topics.category_id = categories.id 
+        WHERE topics.user_id = %s 
+        ORDER BY date_added DESC LIMIT %s OFFSET %s"""
+        async with db.cursor(aiomysql.DictCursor) as cursor:
+            cursor: aiomysql.DictCursor = cursor
+            await cursor.execute(query, args=(user.id, page.per_page + 1, offset(page)))
+            data = parse_list(await cursor.fetchall(), page)
+            return {
+                "detail": "Fetched successfully",
+                "data": data[0],
+                "has_next_page": data[1],
+                "page": page,
+            }
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+
 @topic_router.post("/create")
 async def add_topic(
     db: Annotated[aiomysql.Connection, Depends(get_db)],
@@ -53,18 +81,20 @@ async def add_topic(
 ):
     try:
         if user.type == "Admin":
-            insert_id = await db_add_topic(connection=db, topics=topics)
+            insert_id = await db_add_topic(connection=db, topics=topics, user_id=user.id)  # type: ignore
+            await consume_points(db, 2, user.id) #type: ignore
             return {
                 "detail": "Topics added successfully",
                 "topics": f"{insert_id} - {insert_id + (len(topics) - 1)}",
             }
-        return {
-            "detail": "You are not an Admin!. Please Upgrade your plan to access this feature"
-        }
+        else:
+            return {
+                "detail": "You are not an Admin!. Please Upgrade your plan to access this feature"
+            }
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Unable to add topics {type(e)}",
+            detail=f"{e}",
         )
 
 
@@ -78,9 +108,43 @@ async def remove_topic(
         await db_delete_topic(
             connection=db, topic_id=topic, user_id=user.id  # type: ignore
         )
+        await consume_points(db, 1, user.id) #type: ignore
         return {"detail": "Topic successfully deleted"}
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Unable to delete topic: {type(e)}",
         )
+
+
+# -------------------------------------------------------------------------
+# HELPER CRUD Functions
+# ------------------------------------------------------------------------
+async def _fetch_topics(
+    *,
+    connection: aiomysql.Connection,
+    page: PageInfo,
+    category_id: int | None = None,
+    level: str | None = None,
+):
+    async with connection.cursor(aiomysql.DictCursor) as cursor:
+        cursor: aiomysql.DictCursor = cursor
+        query00 = """SELECT topics.*, users.user_name as creator, categories.name as category FROM topics
+            LEFT JOIN users on users.id = topics.user_id
+            LEFT JOIN categories ON topics.category_id = categories.id {condition} 
+            ORDER BY date_added DESC LIMIT %s OFFSET %s"""
+        final_query = ""
+        if category_id:
+            if level:
+                final_query = query00.format(
+                    condition=f"WHERE topics.category_id = {category_id} AND topics.level REGEXP '{level}'"
+                )
+            else:
+                final_query = query00.format(
+                    condition=f"WHERE topics.category_id = {category_id}"
+                )
+        else:
+            final_query = query00.format(condition=" ")
+
+        await cursor.execute(final_query, args=(page.per_page + 1, offset(page)))
+        return parse_list(await cursor.fetchall(), page)

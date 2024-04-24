@@ -6,7 +6,7 @@ class Topic(BaseModel):
     id: int | None =None
     title: str
     description: str
-    date_added: str | None = None
+    # date_added: str | None = None
     category_id: int
-    user_id: int
+    # user_id: int
 

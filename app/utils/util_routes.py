@@ -3,6 +3,7 @@
 from typing import Any, List, Annotated, Tuple
 from fastapi import Depends
 import aiomysql
+import pymysql
 from app import get_db
 from app.models.page_request import PageInfo
 from app.v_models import *
@@ -39,3 +40,15 @@ def parse_list(res: List[Any], page: PageInfo) -> Tuple[list[Any], bool]:
             len(res) > page.per_page,
         )
     return (res, False)
+
+
+async def consume_points(connection: aiomysql.Connection, points: int, user_id: int):
+    try:
+        async with connection.cursor() as cursor:
+            cursor: aiomysql.DictCursor = cursor
+            query = "UPDATE activity SET admin_points = admin_points - %s WHERE user_id = %s"
+            await cursor.execute(query, args=(points, user_id))
+
+        await connection.commit()
+    except pymysql.err.OperationalError as e:
+        return Exception('You have exhausted all available Admin Points,')

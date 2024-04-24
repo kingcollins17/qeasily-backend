@@ -31,22 +31,22 @@ async def fetch_activity(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
-@activity.get("/consume-challenge")
-async def complete_challenge(
-    db: Annotated[aiomysql.Connection, Depends(get_db)],
-    user: Annotated[User, Depends(get_current_user)],
-):
+# @activity.get("/consume-challenge")
+# async def complete_challenge(
+#     db: Annotated[aiomysql.Connection, Depends(get_db)],
+#     user: Annotated[User, Depends(get_current_user)],
+# ):
 
-    try:
-        await consume_challenge(connection=db, user_id=user.id)  # type: ignore
-        return {"detail": "Challenge Consumed successfully"}
-    except pymysql.OperationalError:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="You have reached the limit of your plan, please buy more credits",
-        )
-    except Exception as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+#     try:
+#         await consume_challenge(connection=db, user_id=user.id)  # type: ignore
+#         return {"detail": "Challenge Consumed successfully"}
+#     except pymysql.OperationalError:
+#         raise HTTPException(
+#             status_code=status.HTTP_400_BAD_REQUEST,
+#             detail="You have reached the limit of your plan, please buy more credits",
+#         )
+#     except Exception as e:
+#         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
 @activity.get("/consume-quiz")
@@ -57,12 +57,12 @@ async def complete_quiz(
 
     try:
         res = await consume_quiz(connection=db, user_id=user.id)  # type: ignore
-        return {"detail": "Quiz Completed successfully"}
+        return {"detail": "Successful, please enjoy your session"}
 
     except pymysql.OperationalError:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="You have reached the limit of your plan, please buy more credits",
+            detail="You have exhausted all available Quiz credits, buy a package to get more credits",
         )
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
@@ -115,12 +115,12 @@ async def consume_quiz(*, connection: aiomysql.Connection, user_id: int):
     await connection.commit()
 
 
-async def consume_challenge(*, connection: aiomysql.Connection, user_id: int):
-    query = (
-        "UPDATE activity SET challenges_left = challenges_left - 1 WHERE user_id = %s"
-    )
-    async with connection.cursor() as cursor:
-        cursor: aiomysql.Cursor = cursor
-        await cursor.execute(query, args=(user_id,))
+# async def consume_challenge(*, connection: aiomysql.Connection, user_id: int):
+#     query = (
+#         "UPDATE activity SET challenges_left = challenges_left - 1 WHERE user_id = %s"
+#     )
+#     async with connection.cursor() as cursor:
+#         cursor: aiomysql.Cursor = cursor
+#         await cursor.execute(query, args=(user_id,))
 
-    await connection.commit()
+#     await connection.commit()

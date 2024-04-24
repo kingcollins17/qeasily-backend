@@ -21,29 +21,44 @@ async def get_user(user: Annotated[User, Depends(get_current_user)]):
     return user
 
 
-@route.get("/find")
-async def find_user(email: str, db: Annotated[aiomysql.Connection, Depends(get_db)]):
-    user = await db_find_user(connection=db, email=email)
-    if user:
-        return User(
-            id=user["id"],
-            user_name=user["user_name"],
-            email=user["email"],
-            type=user["type"],
-        )
-    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not Found")
-
-
 @route.post("/register")
 async def register_user(
     user: RegisterUser, db: Annotated[aiomysql.Connection, Depends(get_db)]
 ):
     try:
-        await db_create_user(connection=db, user=user)
-        return {"detail": f"User {user.email} created successfully"}
+        response = await db_create_user(connection=db, user=user)
+        return {"detail": f"User {user.email} created successfully", "data": response}
+
+    except pymysql.IntegrityError:
+        raise HTTPException(
+            detail="User already has an account",
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+    #
     except Exception as e:
         print(e)
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+
+@route.put("/update-profile")
+async def update_profile(
+    profile: UserProfile,
+    db: Annotated[aiomysql.Connection, Depends(get_db)],
+    user: Annotated[User, Depends(get_current_user)],
+):
+
+    try:
+        async with db.cursor() as cursor:
+            cursor: aiomysql.Cursor = cursor
+            await cursor.execute(
+                "UPDATE users_profile SET department = %s, level = %s WHERE user_id = %s",
+                args=(profile.department, profile.level, user.id),
+            )
+            await db.commit()
+            return {"detail": "Profile updated successfully"}
+
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"{e}")
 
 
 @route.post("/login")
@@ -51,14 +66,18 @@ async def login_user(user: Annotated[LoginUser, Depends(authenticate)]):
     return {"token": create_access_token(data=user.model_dump()), "user": user}
 
 
-@route.get('/dashboard')
-async def get_dashboard(db: Annotated[aiomysql.Connection, Depends(get_db)], user: Annotated[User, Depends(get_current_user)]):
+@route.get("/dashboard")
+async def get_dashboard(
+    db: Annotated[aiomysql.Connection, Depends(get_db)],
+    user: Annotated[User, Depends(get_current_user)],
+):
     try:
-        data = await fetch_dashboard(connection=db, user_id = user.id) #type: ignore
-        return {'detail': 'Fetched dashboard successfully', 'data': data}
+        data = await fetch_dashboard(connection=db, user_id=user.id)  # type: ignore
+        return {"detail": "Fetched dashboard successfully", "data": data}
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-    
+
+
 # CRUD OPERATIONS
 async def fetch_dashboard(*, connection: aiomysql.Connection, user_id: int):
 

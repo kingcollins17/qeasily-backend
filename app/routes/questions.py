@@ -1,8 +1,8 @@
 from typing import Annotated, Any, List, Tuple
-
+from enum import Enum
 import aiomysql
 import pymysql
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
 
 from app import get_db
 from app.db.database import Database
@@ -13,7 +13,7 @@ from app.dependencies.path_deps import get_current_user
 from app.v_models import *
 from app.models.user_model import *
 from app.utils.security import *
-from app.utils.util_routes import offset
+from app.utils.util_routes import *
 
 router = APIRouter()
 
@@ -59,7 +59,9 @@ async def fetch_all_mcqs(
     page: PageInfo,
 ):
     try:
-        query00 = "SELECT * FROM mcqs WHERE topic_id = %s ORDER BY id DESC LIMIT %s OFFSET %s"
+        query00 = (
+            "SELECT * FROM mcqs WHERE topic_id = %s ORDER BY id DESC LIMIT %s OFFSET %s"
+        )
         async with db.cursor(aiomysql.DictCursor) as cursor:
             cursor: aiomysql.DictCursor = cursor
             await cursor.execute(
@@ -84,7 +86,8 @@ async def fetch_created_dcqs(
     topic_id: int | None = None,
 ):
     try:
-        query00 = f"SELECT * FROM dcqs WHERE user_id = {user.id}"
+        query00 = f"""SELECT dcqs.*, topics.title as topic FROM dcqs
+          LEFT JOIN topics on dcqs.topic_id = topics.id WHERE dcqs.user_id = {user.id}"""
         if topic_id:
             query00 += f" AND topic_id = {topic_id}"
         query00 += " ORDER BY id DESC LIMIT %s OFFSET %s"
@@ -145,8 +148,9 @@ async def create_dcq(
             cursor: aiomysql.Cursor = cursor
             await cursor.executemany(query00, args=data)
 
+        await consume_points(db, 1, user.id) #type: ignore
         await db.commit()
-        return {"detail": "Double choice questions created successfully"}
+        return {"detail": "Dual choice questions created successfully"}
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"{e}")
 
@@ -159,7 +163,9 @@ async def fetch_created_mcq(
     topic_id: int | None = None,
 ):
     try:
-        query = f"SELECT * FROM mcqs WHERE user_id = {user.id}"
+        query = f"""SELECT mcqs.*, topics.title as topic FROM mcqs
+          LEFT JOIN topics ON mcqs.topic_id = topics.id
+        WHERE mcqs.user_id = {user.id} """
         if topic_id:
             query += f" AND topic_id = {topic_id}"
         query += " ORDER BY id DESC LIMIT %s OFFSET %s"
@@ -168,7 +174,7 @@ async def fetch_created_mcq(
             await cursor.execute(query, args=(page.per_page + 1, offset(page)))
             res = _parse_list((await cursor.fetchall()), page)
             return {
-                "details": "Your creations fetched",
+                "detail": "Your creations fetched",
                 "data": res[0],
                 "has_next_page": res[1],
                 "page": page,
@@ -182,13 +188,24 @@ async def delete_mcq(
     db: Annotated[aiomysql.Connection, Depends(get_db)],
     ids: List[int],
     user: Annotated[User, Depends(get_current_user)],
+    background: BackgroundTasks,
 ):
+
     try:
         query = f"DELETE FROM mcqs WHERE id IN {tuple(ids)} AND user_id = %s"
         async with db.cursor() as cursor:
             cursor: aiomysql.Cursor = cursor
             await cursor.execute(query, args=(user.id,))
+            await consume_points(db, 1, user.id) #type: ignore
             await db.commit()
+            # clean up after deletion the background
+            background.add_task(
+                clean_after_delete,
+                connection=db,
+                questions=ids,
+                type=QuizType.MULTIPLE_CHOICE,
+            )
+
             return {"detail": f"Questions {ids} deleted successfully"}
 
     except Exception as e:
@@ -200,6 +217,7 @@ async def delete_dcq(
     db: Annotated[aiomysql.Connection, Depends(get_db)],
     ids: List[int],
     user: Annotated[User, Depends(get_current_user)],
+    background: BackgroundTasks,
 ):
     try:
         query = f"DELETE FROM dcqs WHERE id IN {tuple(ids)} AND user_id = %s"
@@ -207,6 +225,15 @@ async def delete_dcq(
             cursor: aiomysql.Cursor = cursor
             await cursor.execute(query, args=(user.id,))
             await db.commit()
+            await consume_points(db, 1, user.id) #type: ignore
+
+            #Add clean up task in the background
+            background.add_task(
+                clean_after_delete,
+                connection=db,
+                questions=ids,
+                type=QuizType.DUAL_CHOICE,
+            )
             return {"detail": f"Questions {ids} deleted successfully"}
 
     except Exception as e:
@@ -240,6 +267,7 @@ async def create_questions(
         async with db.cursor() as cursor:
             cursor: aiomysql.Cursor = cursor
             await cursor.executemany(q0, args=data)
+        await consume_points(db, 1, user.id) #type: ignore
         await db.commit()
         return {"detail": "Questions added successfully"}
     except Exception as e:
@@ -251,6 +279,63 @@ async def create_questions(
 # ----------------------------------------------------------------------------------
 # CRUD and UTILITY FUNCTIONS
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++=
+
+
+class QuizType(Enum):
+    MULTIPLE_CHOICE = "mcq"
+    DUAL_CHOICE = "dcq"
+
+
+async def clean_after_delete(
+    *, connection: aiomysql.Connection, questions: List[int], type: QuizType
+):
+    query00 = "SELECT id, questions FROM quiz WHERE questions REGEXP '{id}' AND type = '{type}'"
+    async with connection.cursor(aiomysql.DictCursor) as cursor:
+        cursor: aiomysql.Cursor = cursor
+        temp_result = []
+        result = []
+        # Create a list of dict containing id and questions as keys
+        for i in questions:
+            await cursor.execute(query00.format(id=i, type=type.value))
+            temp = await cursor.fetchall()
+            temp_result = [*temp_result, *[value for value in temp]]
+
+        def _parse(values: List[Dict], args: List[int]):
+            for d in values:
+                temp = [
+                    int(x)
+                    for x in str(d["questions"])
+                    .removeprefix("[")
+                    .removesuffix("]")
+                    .split(",")
+                ]
+                for i in args:
+                    try:
+                        temp.remove(i)
+                    except ValueError as e:
+                        pass
+                # After removing all the deleted ids, update the dictionary
+                d["questions"] = str(temp)
+            return values
+
+        # update the db with questions
+        async def _update_db(updated: List[Dict]):
+            query02 = "UPDATE quiz SET questions = %s WHERE id = %s AND type = '{type}'"
+            await cursor.executemany(
+                query02.format(type=type.value),
+                args=[(value["questions"], value["id"]) for value in updated],
+            )
+            await connection.commit()
+
+        # Removes duplicates from the list of dicts
+        for x in temp_result:
+            try:
+                result.index(x)
+            except ValueError:
+                result.append(x)
+        # Last step, removing all deleted ids
+        await _update_db(_parse(result, questions))
+        return result
 
 
 async def _fetch_quiz_questions(

@@ -78,11 +78,11 @@ class PagedTopicHandler(PageHandler):
 
 
 ### - add a topic to the database
-async def db_add_topic(*, connection: aiomysql.Connection, topics: List[Topic]):
+async def db_add_topic(*, connection: aiomysql.Connection, topics: List[Topic], user_id: int):
     length = len(topics)
     values = ""
     for i in range(length):
-        values += f"('{topics[i].title}', '{topics[i].description}', {topics[i].category_id}, {topics[i].user_id})"
+        values += f"('{topics[i].title}', '{topics[i].description}', {topics[i].category_id}, {user_id})"
         if i < (length - 1):
             values += ","
     query = f"INSERT INTO topics (title, description, category_id, user_id) VALUES {values}"

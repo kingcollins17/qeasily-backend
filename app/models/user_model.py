@@ -17,20 +17,20 @@ class User(BaseModel):
     def is_admin(self) -> bool:
         return self.type == 'Admin'
 
-    
+
 class RegisterUser(User):
     password: str
-
-LoginUser = RegisterUser
+    department: str
+    level: str
 
 
 class UserProfile(BaseModel):
-    id: int | None = Field(default= None, description='Id of this user profile record')
-    first_name: str
-    last_name: str
-    reg_no: str | None
     department: str
     level: str
-    user_id: int 
+
+
+class LoginUser(BaseModel):
+    email: str
+    password: str
 
 

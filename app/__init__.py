@@ -1,4 +1,4 @@
-#Writing global and large scoped dependencies here ...
+# Writing global and large scoped dependencies here ...
 from dotenv import load_dotenv
 import os
 
@@ -7,11 +7,14 @@ load_dotenv()
 
 import aiomysql
 
-DB_HOST = str(os.getenv("DB_HOST"))
-DB_PORT = int(str(os.getenv("DB_PORT")))
-DB_USER = str(os.getenv("DB_USER"))
-DB_PASSWORD = str(os.getenv("DB_PASSWORD"))
-DB_NAME = str(os.getenv("DB_NAME"))
+DB_HOST = str(os.getenv("HOST"))
+DB_PORT = int(str(os.getenv("PORT")))
+DB_USER = str(os.getenv("USER"))
+DB_PASSWORD = str(os.getenv("PASSWORD"))
+DB_NAME = str(os.getenv("NAME"))
+
+PUBLIC_KEY = str(os.getenv("P_KEY"))
+SECRET_KEY = str(os.getenv("S_KEY"))
 
 
 credentials: dict = {
@@ -21,6 +24,13 @@ credentials: dict = {
     "password": DB_PASSWORD,
     "db": DB_NAME,
 }
+# credentials: dict = {
+#     "host": "localhost",
+#     "port": 3306,
+#     "user": "root",
+#     "password": "mysqlking@02",
+#     "db": "quiz",
+# }
 
 
 async def get_db():
@@ -30,4 +40,3 @@ async def get_db():
           yield db
     finally:
           db.close() #type: ignore
-    
