@@ -85,7 +85,7 @@ async def add_topic(
             await consume_points(db, 2, user.id) #type: ignore
             return {
                 "detail": "Topics added successfully",
-                "topics": f"{insert_id} - {insert_id + (len(topics) - 1)}",
+                # "topics": f"{insert_id} - {insert_id + (len(topics) - 1)}",
             }
         else:
             return {

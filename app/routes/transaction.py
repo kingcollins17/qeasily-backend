@@ -48,28 +48,55 @@ async def _subscribe(
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
-@transaction.get('/force-verify')
-async def _force_verify(
+
+@transaction.delete("/delete")
+async def delete_transaction(
     ref: str,
     db: Annotated[aiomysql.Connection, Depends(get_db)],
-                         user: Annotated[User, Depends(get_current_user)]):
-    try: 
-        response =  await db_verify_transaction(connection=db, reference=ref)
-        return {'detail': f'Congrats, you have bought the {response.name} package', 'data': response}
+    user: Annotated[User, Depends(get_current_user)],
+):
+    try:
+        await abandon_subscription(connection=db, reference=ref)
+        return {'detail': 'Transaction deleted successfully'}
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f'{e}')
 
 
-@transaction.get('/pending')
-async def fetch_pending_transactions(db: Annotated[aiomysql.Connection, Depends(get_db)],
-                                      user: Annotated[User, Depends(get_current_user)], page: PageInfo):
+@transaction.get("/force-verify")
+async def _force_verify(
+    ref: str,
+    db: Annotated[aiomysql.Connection, Depends(get_db)],
+    user: Annotated[User, Depends(get_current_user)],
+):
+    try:
+        response = await db_verify_transaction(connection=db, reference=ref)
+        return {
+            "detail": f"Congrats, you have bought the {response.name} package",
+            "data": response,
+        }
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"{e}")
+
+
+@transaction.get("/pending")
+async def fetch_pending_transactions(
+    db: Annotated[aiomysql.Connection, Depends(get_db)],
+    user: Annotated[User, Depends(get_current_user)],
+    page: PageInfo,
+):
     # try:
-        async with db.cursor(aiomysql.DictCursor) as cursor:
-            cursor: aiomysql.DictCursor = cursor
-            query = """SELECT * FROM subscription_trans WHERE status = 'pending' 
+    async with db.cursor(aiomysql.DictCursor) as cursor:
+        cursor: aiomysql.DictCursor = cursor
+        query = """SELECT * FROM subscription_trans WHERE status = 'pending' 
             AND user_id = %s ORDER BY created_at DESC LIMIT %s OFFSET %s"""
-            await cursor.execute(query, args=(user.id, page.per_page + 1, offset(page)))
-            data, next =  parse_list(await cursor.fetchall(), page)
-            return {'detail': 'Fetched your Pending Transactions', 'data': data, 'has_next_page': next}
-    # except Exception as e:
-        # raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f'{e}')
+        await cursor.execute(query, args=(user.id, page.per_page + 1, offset(page)))
+        data, next = parse_list(await cursor.fetchall(), page)
+        return {
+            "detail": "Fetched your Pending Transactions",
+            "data": data,
+            "has_next_page": next,
+        }
+
+
+# except Exception as e:
+# raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f'{e}')

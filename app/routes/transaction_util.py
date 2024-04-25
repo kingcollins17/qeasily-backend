@@ -89,3 +89,10 @@ async def renew_subscription(
         )
 
 
+async def abandon_subscription(connection: aiomysql.Connection, reference: str):
+    async with connection.cursor() as cursor:
+        cursor: aiomysql.Cursor = cursor
+        query = "DELETE FROM subscription_trans WHERE reference = %s"
+        await cursor.execute(query, args=(reference,))
+    await connection.commit()
+        
