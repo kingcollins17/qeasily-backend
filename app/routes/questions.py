@@ -192,7 +192,7 @@ async def delete_mcq(
 ):
 
     try:
-        query = f"DELETE FROM mcqs WHERE id IN {tuple(ids)} AND user_id = %s"
+        query = f"DELETE FROM mcqs WHERE id IN {tuple([*ids, 0])} AND user_id = %s"
         async with db.cursor() as cursor:
             cursor: aiomysql.Cursor = cursor
             await cursor.execute(query, args=(user.id,))
@@ -220,7 +220,7 @@ async def delete_dcq(
     background: BackgroundTasks,
 ):
     try:
-        query = f"DELETE FROM dcqs WHERE id IN {tuple(ids)} AND user_id = %s"
+        query = f"DELETE FROM dcqs WHERE id IN {tuple([*ids, 0])} AND user_id = %s"
         async with db.cursor() as cursor:
             cursor: aiomysql.Cursor = cursor
             await cursor.execute(query, args=(user.id,))
