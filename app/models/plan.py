@@ -58,16 +58,16 @@ class Paystackkeys(BaseModel):
     secret: str
 
 
-if debug == True:
-    keys = Paystackkeys(
+# if debug == True:
+keys = Paystackkeys(
         public="pk_test_1467164089a777561173b627973b2349425a2131",
         secret="sk_test_ac44a7ca850f4bac82b8db3f7b8f62e1b1321c7d",
     )
-else:
-    keys = Paystackkeys(
-        public="pk_test_1467164089a777561173b627973b2349425a2131",
-        secret="sk_test_ac44a7ca850f4bac82b8db3f7b8f62e1b1321c7d",
-    )
+# else:
+#     keys = Paystackkeys(
+#         public="pk_test_1467164089a777561173b627973b2349425a2131",
+#         secret="sk_test_ac44a7ca850f4bac82b8db3f7b8f62e1b1321c7d",
+#     )
 plans = [free, scholar, genius, admin]
 
 
