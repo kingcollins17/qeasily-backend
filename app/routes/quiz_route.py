@@ -145,6 +145,7 @@ async def create_quiz(
         VALUES (%s, %s, %s,%s,%s,%s,%s,%s)"""
         async with db.cursor() as cursor:
             cursor: aiomysql.Cursor = cursor
+            await consume_points(cursor, 3, user.id) #type: ignore
             await cursor.execute(
                 query,
                 args=(
@@ -158,11 +159,11 @@ async def create_quiz(
                     quiz.type,
                 ),
             )
-            await consume_points(db, 3, user.id) #type: ignore
+           
             await db.commit()
         return {"detail": "Quiz created successfully"}
     except Exception as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"{e}")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=CREDIT_EXHAUSTED)
 
 
 @quiz_router.delete("/delete")
@@ -172,16 +173,18 @@ async def delete_quiz(
     qid: int,
 ):
     try:
+        # await consume_points(db, 1, user.id) #type: ignore
         async with db.cursor() as cursor:
             cursor: aiomysql.Cursor = cursor
+            await consume_points(cursor, 3, user.id) # type: ignore
             await cursor.execute(
                 f"DELETE FROM quiz WHERE id = {qid} AND user_id = {user.id}"
             )
-        await consume_points(db, 1, user.id) #type: ignore
+
         await db.commit()
         return {"detail": "Quiz deleted successfully"}
     except Exception as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"{e}")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=CREDIT_EXHAUSTED)
 
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

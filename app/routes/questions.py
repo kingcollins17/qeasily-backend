@@ -146,9 +146,10 @@ async def create_dcq(
         ]
         async with db.cursor() as cursor:
             cursor: aiomysql.Cursor = cursor
+            
+            await consume_points(cursor, len(dcqs), user.id) #type: ignore
             await cursor.executemany(query00, args=data)
 
-        await consume_points(db, 1, user.id) #type: ignore
         await db.commit()
         return {"detail": "Dual choice questions created successfully"}
     except Exception as e:
@@ -195,8 +196,8 @@ async def delete_mcq(
         query = f"DELETE FROM mcqs WHERE id IN {tuple([*ids, 0])} AND user_id = %s"
         async with db.cursor() as cursor:
             cursor: aiomysql.Cursor = cursor
+            await consume_points(cursor, 1, user.id)  # type: ignore
             await cursor.execute(query, args=(user.id,))
-            await consume_points(db, 1, user.id) #type: ignore
             await db.commit()
             # clean up after deletion the background
             background.add_task(
@@ -223,11 +224,12 @@ async def delete_dcq(
         query = f"DELETE FROM dcqs WHERE id IN {tuple([*ids, 0])} AND user_id = %s"
         async with db.cursor() as cursor:
             cursor: aiomysql.Cursor = cursor
+
+            await consume_points(cursor, 1, user.id)  # type: ignore
             await cursor.execute(query, args=(user.id,))
             await db.commit()
-            await consume_points(db, 1, user.id) #type: ignore
 
-            #Add clean up task in the background
+            # Add clean up task in the background
             background.add_task(
                 clean_after_delete,
                 connection=db,
@@ -266,8 +268,9 @@ async def create_questions(
         ]
         async with db.cursor() as cursor:
             cursor: aiomysql.Cursor = cursor
+
+            await consume_points(cursor, len(mcqs), user.id)  # type: ignore
             await cursor.executemany(q0, args=data)
-        await consume_points(db, 1, user.id) #type: ignore
         await db.commit()
         return {"detail": "Questions added successfully"}
     except Exception as e:

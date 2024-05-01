@@ -5,6 +5,7 @@ from typing import Dict, Tuple, List
 from app.models.page_request import PageInfo
 from app.models.topic_models import *
 from app.db import PageHandler
+from app.utils.util_routes import consume_points
 
 
 class PagedTopicHandler(PageHandler):
@@ -75,8 +76,6 @@ class PagedTopicHandler(PageHandler):
     #         return ((page.page - 1) * page.per_page)
 
 
-
-
 ### - add a topic to the database
 async def db_add_topic(*, connection: aiomysql.Connection, topics: List[Topic], user_id: int):
     length = len(topics)
@@ -89,6 +88,7 @@ async def db_add_topic(*, connection: aiomysql.Connection, topics: List[Topic], 
     insert_id: Any
     async with connection.cursor() as cursor:
         cursor: aiomysql.Cursor = cursor
+        await consume_points(cursor, 2, user_id) #consume points first
         await cursor.execute(query=query)
         insert_id = cursor.lastrowid
 
@@ -99,8 +99,6 @@ async def db_add_topic(*, connection: aiomysql.Connection, topics: List[Topic], 
 async def db_delete_topic(*, connection: aiomysql.Connection, topic_id: int, user_id: int):
     async with connection.cursor() as cursor:
         cursor: aiomysql.Cursor = cursor
+        await consume_points(cursor, 2, user_id)
         await cursor.execute(f"DELETE FROM topics WHERE id = {topic_id} AND user_id = {user_id}")
     await connection.commit()
-
-
-

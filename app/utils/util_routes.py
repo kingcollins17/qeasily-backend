@@ -10,6 +10,8 @@ from app.v_models import *
 from app.models.categories_models import Category
 from app.db.database import Database
 
+CREDIT_EXHAUSTED = "You have exhausted your admin credits. Buy an admin package to get more credits"
+
 
 async def add_quiz_data(*, quiz: List[Quiz], db: aiomysql.Connection):
     for q in quiz:
@@ -42,13 +44,9 @@ def parse_list(res: List[Any], page: PageInfo) -> Tuple[list[Any], bool]:
     return (res, False)
 
 
-async def consume_points(connection: aiomysql.Connection, points: int, user_id: int):
-    try:
-        async with connection.cursor() as cursor:
-            cursor: aiomysql.DictCursor = cursor
-            query = "UPDATE activity SET admin_points = admin_points - %s WHERE user_id = %s"
-            await cursor.execute(query, args=(points, user_id))
-
-        await connection.commit()
-    except pymysql.err.OperationalError as e:
-        return Exception('You have exhausted all available Admin Points,')
+async def consume_points(cursor: aiomysql.Cursor, points: int, user_id: int):
+    await cursor.execute('SELECT admin_points FROM activity WHERE user_id = %s', args=(user_id,))
+    currentpoints = (await cursor.fetchone())[0]
+    if (currentpoints < 1): raise Exception(CREDIT_EXHAUSTED)
+    query = "UPDATE activity SET admin_points = admin_points - %s WHERE user_id = %s"
+    await cursor.execute(query, args=(points, user_id))

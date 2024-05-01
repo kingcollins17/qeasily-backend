@@ -82,7 +82,6 @@ async def add_topic(
     try:
         if user.type == "Admin":
             insert_id = await db_add_topic(connection=db, topics=topics, user_id=user.id)  # type: ignore
-            await consume_points(db, 2, user.id) #type: ignore
             return {
                 "detail": "Topics added successfully",
                 # "topics": f"{insert_id} - {insert_id + (len(topics) - 1)}",
@@ -108,7 +107,7 @@ async def remove_topic(
         await db_delete_topic(
             connection=db, topic_id=topic, user_id=user.id  # type: ignore
         )
-        await consume_points(db, 1, user.id) #type: ignore
+        # await consume_points(db, 1, user.id) #type: ignore
         return {"detail": "Topic successfully deleted"}
     except Exception as e:
         raise HTTPException(

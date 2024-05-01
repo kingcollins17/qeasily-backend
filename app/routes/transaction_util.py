@@ -81,7 +81,7 @@ async def renew_subscription(
 ):
     async with connection.cursor() as cursor:
         cursor: aiomysql.Cursor = cursor
-        query00 = "UPDATE activity SET plan = %s, renewed_at = NOW(), quizzes_left = %s, admin_points = %s WHERE user_id = %s"
+        query00 = "UPDATE activity SET plan = %s, renewed_at = NOW(), quizzes_left = quizzes_left + %s, admin_points = admin_points + %s WHERE user_id = %s"
         await cursor.execute(query00, args=(plan.name, plan.quizzes, plan.admin_points, user_id))
 
         await cursor.execute(
