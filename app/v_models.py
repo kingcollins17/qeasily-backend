@@ -14,14 +14,12 @@ class QuickStartConf(BaseModel):
 
 
 
-class Topic(BaseModel):
-    id: Union[int, None] = Field(default=None)
-    title: str
-    description: str
-    category_id: int
-    quiz_count: Union[int, None] = Field(default=None, description='Number of quizzes this topic has')
-
-    
+# class Topic(BaseModel):
+#     id: Union[int, None] = Field(default=None)
+#     title: str
+#     description: str
+#     category_id: int
+   
 
 
 

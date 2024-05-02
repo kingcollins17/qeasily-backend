@@ -28,8 +28,8 @@ scholar = QeasilyPlan(
     id=2,
     name="Scholar",
     price=300.00,
-    features=["15 Quiz Credits", "0 Admin Credits"],
-    quizzes=15,
+    features=["10 Quiz Credits", "0 Admin Credits"],
+    quizzes=10,
     admin_points=0,
     admin_access=False,
 )
@@ -37,8 +37,8 @@ genius = QeasilyPlan(
     id=3,
     name="Genius",
     price=600.00,
-    features=["30 Quiz Credits", "0 Admin Credits"],
-    quizzes=35,
+    features=["25 Quiz Credits", "0 Admin Credits"],
+    quizzes=25,
     admin_points=0,
     admin_access=False,
 )
@@ -46,9 +46,9 @@ admin = QeasilyPlan(
     id=4,
     name="Admin",
     price=1000.00,
-    features=["500 Quiz Credits", "100 Admin Points", "Full Admin access"],
-    quizzes=75,
-    admin_points=110,
+    features=["50 Quiz Credits", "100 Admin Points", "Full Admin access"],
+    quizzes=50,
+    admin_points=100,
     admin_access=True,
 )
 

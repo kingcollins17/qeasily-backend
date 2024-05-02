@@ -80,16 +80,8 @@ async def add_topic(
     user: Annotated[User, Depends(get_current_user)],
 ):
     try:
-        if user.type == "Admin":
-            insert_id = await db_add_topic(connection=db, topics=topics, user_id=user.id)  # type: ignore
-            return {
-                "detail": "Topics added successfully",
-                # "topics": f"{insert_id} - {insert_id + (len(topics) - 1)}",
-            }
-        else:
-            return {
-                "detail": "You are not an Admin!. Please Upgrade your plan to access this feature"
-            }
+        insert_id = await db_add_topic(connection=db, topics=topics, user_id=user.id)  # type: ignore
+        return {"detail": "Topics added successfully"}
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
