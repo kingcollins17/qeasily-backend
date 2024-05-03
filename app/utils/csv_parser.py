@@ -3,7 +3,8 @@ from typing import List, Tuple, Set, Union
 import pandas as pd
 import random
 
-from app.v_models import Topic
+# from app.v_models import Topic
+from app.models.topic_models import Topic
 from app.models.categories_models import Category
 
 

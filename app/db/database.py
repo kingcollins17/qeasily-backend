@@ -1,6 +1,7 @@
 import abc
 from typing import Any, List, Tuple, Dict
 import aiomysql
+from app.models.topic_models import Topic
 from app.v_models import *
 from app.utils.csv_parser import parse_question_list
 from app.models.categories_models import Category
