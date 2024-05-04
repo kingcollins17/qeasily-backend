@@ -8,6 +8,7 @@ from app.db.categories_crud import *
 from app.models.user_model import *
 from app.models.plan import *
 from app.utils.security import *
+from app import SECRET_KEY
 
 INITIALIZE_URL = "https://api.paystack.co/transaction/initialize"
 VERIFY_URL = "https://api.paystack.co/transaction/verify/{reference}"
@@ -21,7 +22,7 @@ async def initalize_transaction(*, email: str, amount: int):
         response: httpx.Response = await client.post(
             url=INITIALIZE_URL,
             data={"email": email, "amount": str(amount)},
-            headers={"Authorization": f"Bearer {keys.secret}"},
+            headers={"Authorization": f"Bearer {SECRET_KEY}"},
         )
         return response.json()
 
