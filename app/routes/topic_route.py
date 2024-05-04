@@ -81,7 +81,7 @@ async def add_topic(
 ):
     try:
         insert_id = await db_add_topic(connection=db, topics=topics, user_id=user.id)  # type: ignore
-        return {"detail": "Topics added successfully"}
+        return {"detail": "Topic added"}
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -100,7 +100,7 @@ async def remove_topic(
             connection=db, topic_id=topic, user_id=user.id  # type: ignore
         )
         # await consume_points(db, 1, user.id) #type: ignore
-        return {"detail": "Topic successfully deleted"}
+        return {"detail": "Topic deleted"}
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
