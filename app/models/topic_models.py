@@ -8,5 +8,6 @@ class Topic(BaseModel):
     description: str
     # date_added: str | None = None
     category_id: int
+    level: str
     # user_id: int
 

@@ -81,10 +81,10 @@ async def db_add_topic(*, connection: aiomysql.Connection, topics: List[Topic], 
     length = len(topics)
     values = ""
     for i in range(length):
-        values += f"('{topics[i].title}', '{topics[i].description}', {topics[i].category_id}, {user_id})"
+        values += f"('{topics[i].title}', '{topics[i].description}', {topics[i].category_id}, {user_id}, {topics[i].level})"
         if i < (length - 1):
             values += ","
-    query = f"INSERT INTO topics (title, description, category_id, user_id) VALUES {values}"
+    query = f"INSERT INTO topics (title, description, category_id, user_id, level) VALUES {values}"
     insert_id: Any
     async with connection.cursor() as cursor:
         cursor: aiomysql.Cursor = cursor
