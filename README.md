@@ -16,21 +16,11 @@ This is a backend application for an educational quiz platform built with FastAP
 - Payment and subscription integration with Paystack
 - Pagination support for API endpoints
 
-## Directory Structure
 
-The application follows a layer-first directory structure:
+The application follows a layer-first directory structure
 
-app/
-├── dependencies/        # Contains dependency functions for injection
-├── models/              # Pydantic data models
-├── routes/              # API routers, separated by feature
-├── utils/               # Utility functions (e.g., for pagination)
-├── main.py              # Entry point of the application
-├── schema.sql           # Database schema backup
 
-## Getting Started
-
-### Prerequisites
+### Core dependencies
 
 - Python 3.8+
 - MySQL database
@@ -39,61 +29,11 @@ app/
 - Uvicorn
 - Paystack account for payment integration
 
-### Installation
 
-1. **Clone the repository:**
 
-   ```bash
-   git clone https://github.com/yourusername/quiz-app-backend.git
-   cd quiz-app-backend
-   ```
+## Usage and Features 
 
-2. **Create and activate a virtual environment:**
-
-   ```bash
-   python3 -m venv venv
-   source venv/bin/activate  # On Windows use `venv\Scripts\activate`
-   ```
-
-3. **Install the required packages:**
-
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-4. **Set up the MySQL database:**
-
-   - Create a MySQL database.
-   - Import the schema from `schema.sql`:
-
-     ```bash
-     mysql -u yourusername -p yourdatabase < app/schema.sql
-     ```
-
-5. **Configure environment variables:**
-
-   Create a `.env` file in the root directory and add your database and Paystack configuration:
-
-   ```env
-   DATABASE_URL=mysql://username:password@localhost/dbname
-   PAYSTACK_SECRET_KEY=your_paystack_secret_key
-   ```
-
-### Running the Application
-
-1. **Start the FastAPI server:**
-
-   ```bash
-   uvicorn app.main:app --reload
-   ```
-
-2. **Access the API documentation:**
-
-   Open your browser and navigate to `http://127.0.0.1:8000/docs` to explore the interactive API documentation.
-
-## Usage
-
-### API Endpoints
+### API Features
 
 - **Course Management:**
   - Create a course
