@@ -1,4 +1,6 @@
 # Qeasily - Higher Education Quiz application 
+### Check out the Live API docs at
+ - [Qeasily REST API documentation](https://qeasily-backend.onrender.com/redoc)
 
 ## Overview
 
